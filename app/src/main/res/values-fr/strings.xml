@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="instructions_title">Instructions</string>
+    <string name="instructions_message">1. Entrer niveau de dresseur\n2. Presser bouton GO et permettre capture d\'écran\n3. Choisir un Pokémon dans \'Pokémon Go\'\n4. Presser bouton IV pour scanner le Pokémon\n5. Ajuster données si besoin\n6. Vérifier les IV !</string>
+    <string name="goiv_is_open_source">GoIV est open source!</string>
+    <string name="trainer_level">Niveau</string>
+
+    <string-array name="teams">
+        <item name="mystic">"Sagesse"</item>
+        <item name="valor">"Bravoure"</item>
+        <item name="instinct">"Intuition"</item>
+    </string-array>
+
+    <string name="pokemon_name">Nom du Pokémon :</string>
+    <string name="cp">PC</string>
+    <string name="hp">PV</string>
+    <string name="use_the_slider_below_to_align_the_arc">Déplacer le curseur pour aligner l\'arc</string>
+    <string name="cancel">Annuler</string>
+    <string name="check_iv">Obtenir IV</string>
+    <string name="notification_title">GoIV Actif - Niveau %1$d</string>
+    <string name="close">Fermer</string>
+    <string name="main_permission">Accorder permissions</string>
+    <string name="main_start">GO</string>
+    <string name="main_starting">Lancement…</string>
+    <string name="main_stop">Arrêt</string>
+    <string name="back">Retour</string>
+    <string name="accept_screen_capture">Accepter lecture d\'écran</string>
+    <string name="settings_page_title">Paramètres</string>
+    <string name="launch_pokemon_go_setting_title">Lancer Pokemon Go</string>
+    <string name="launch_pokemon_go_setting_summary">Ouvrir Pokémon Go quand le bouton GO est cliqué</string>
+    <string name="confirmation_dialog_setting_title">Fenêtre de confirmation</string>
+    <string name="confirmation_dialog_setting_summary">Permettre l\'édition des infos du Pokémon avant de calculer les IV</string>
+    <string name="manual_screenshot_mode_setting_title">Utiliser des captures d\'écran</string>
+    <string name="manual_screenshot_mode_setting_summary">Économiser la batterie en scannant des captures d\'écran au lieu de l\'auto-détection. Ce paramètre doit être activé pour les versions Android KitKat et antérieures</string>
+    <string name="delete_screenshots_setting_title">Effacer captures d\'écran</string>
+    <string name="delete_screenshots_setting_summary">Effacer automatiquement les captures d\'écran prises par GoIV</string>
+    <string name="copy_to_clipboard_setting_title">Copier vers presse-papier</string>
+    <string name="send_crash_reports_setting_title">Envoyer rapports de plantage</string>
+    <string name="send_crash_reports_setting_summary">Aider les développeurs à améliorer l\'application en leur envoyant des données de plantage de façon anonyme</string>
+    <string name="auto_update_setting_title">Mises à jour automatiques</string>
+    <string name="auto_update_setting_summary">Vérifier automatiquement si des mises à jour sont disponibles au démarrage de l\'application</string>
+    <string name="check_for_update_setting_title">Chercher mise à jour</string>
+    <string name="check_for_update_setting_summary">Vérifier si une mise à jour est disponible maintenant</string>
+    <string name="scan_pokemon_failed">Échec du scan, veuillez défiler vers le haut et ré-essayer !</string>
+    <string name="see_all">Tout voir</string>
+    <string name="powerup_calc_instructions">Calcul d\'évolution et rechargement\nDéplacer le curseur pour différentes prédictions</string>
+    <string name="evolution">Évolution</string>
+    <string name="level">Niveau</string>
+    <string name="level_num">Niveau %1$s</string>
+    <string name="possible_iv_combinations">"%1$d combi. d\'IV possibles"</string>
+    <string name="appraisal_refining">Raffiner via \'Évaluer\'</string>
+    <string name="attack">Attaque</string>
+    <string name="defense">Défense</string>
+    <string name="stamina_hp">PV</string>
+    <string name="missing_inputs">PC et PV requis.</string>
+    <string name="checking_for_update">Recherche de mise à jour…</string>
+    <string name="ongoing_update">Une mise à jour de GoIV est déjà en cours de téléchargement</string>
+    <string name="up_to_date">L\'appli est à jour</string>
+    <string name="update_check_failed">Erreur pendant la recherche de mise à jour. Veuillez vérifier votre connexion internet</string>
+    <string name="iv_perfect" formatted="false">% Parfait</string>
+    <string name="wrong_pokemon_name_input">" n'a pas été trouvé."</string>
+    <string name="avg">MOY</string>
+    <string name="atk">ATQ</string>
+    <string name="def">DÉF</string>
+    <string name="sta">PV</string>
+    <string name="hp_expanded_box">PV</string>
+    <string name="perfection_explainer" formatted="false">"Le pourcentage correspond à la différence entre les PC de votre Pokémon, et ceux d'un Pokémon de la même espèce qui aurait des IV parfaites.\n\nPar exemple, si le pourcentage est 92%, alors votre Pokémon a 8% de PC en moins que s'il avait des IV parfaites."</string>
+    <string name="pokespam">PokéSpam</string>
+    <string name="pokespam_formatted_message">%1$d (%2$d lignes + %3$d)</string>
+    <string name="candy">Bonbons</string>
+    <string name="pokespam_not_available">Indisponible</string>
+    <string name="pokespam_setting_title">Activer le calcul de PokéSpam</string>
+    <string name="pokespam_setting_summary">Scanne le nombre de bonbons pour calculer combien de Pokémon vous pouvez faire évoluer ; utile pour prévoir quand utiliser un œuf chance</string>
+
+    <string name="clipboard_modifier_preview">Aperçu</string>
+    <string name="position_handler_toast">Déplacez la fenêtre en déplaçant cette icône</string>
+    <string name="clipboard_no_token_selected">Veuillez choisir un symbole à ajouter depuis la liste défilante.</string>
+    <string name="showtranslatedpokemonname_setting_title">Montrer noms traduits des Pokémon</string>
+    <string name="showtranslatedpokemonname_setting_summary">Si votre application Pokémon Go est en anglais, mais que votre téléphone ne l\'est pas, cette option permet à GoIV de reconnaître les noms anglais des Pokémon tout en les affichant dans votre langue</string>
+    <string name="pause_goiv_notification">Pause</string>
+    <string name="clipboard_copy_toast">Copié %s vers le presse-papier</string>
+    <string name="no_clipboard_preview">Pas d\'aperçu disponible</string>
+    <string name="copy_to_clip_single_setting">Copier différemment un résultat unique</string>
+    <string name="copy_to_clip_single_setting_summary">Permet de paramétrer différemment la copie automatique des IV d\'un Pokémon si le scan ne donne qu\'une seule possibilité</string>
+    <string name="view_credits">Voir les crédits</string>
+    <string name="view_credits_summary">Voir les crédits de l\'application, les projets open-source utilisés et les remerciements</string>
+    <string name="title_activity_credits">CreditsActivity</string>
+    <string name="app_credits_title">Crédits</string>
+    <string name="view_credits_button">viewCredits</string>
+    <string name="android_sub5_warning">GoIV a détecté que votre téléphone n\'a pas l\'API MediaProjection, qui est utilisée pour montrer automatiquement le bouton IV. Cela pourrait être corrigé en mettant à jour votre téléphone vers Android 5 ou plus. L\'application va se restreindre au mode Capture d\'écran pour éviter de crasher. Vous pouvez utiliser GoIV en prenant une capture d\'écran manuellement, ce qui se fait en maintenant les boutons home+power pendant une courte durée. Nous sommes désolés pour cet inconvénient.</string>
+    <string name="copy_to_clip_show_toast_setting_summary">Montre un aperçu de ce qui a été copié dans une petite fenêtre</string>
+    <string name="copy_to_clip_show_toast_setting">Montrer aperçu du presse-papier</string>
+    <string name="autoAppraisalScanDelay_title">Délai d\'évaluation automatique</string>
+
+
+    <string name="notification_title_goiv_stopped">GoIV s\'est arrêtée</string>
+    <string name="notification_title_tap_to_open">Touchez pour ouvrir GoIV</string>
+    <string name="token_pokemonname">Nom du Pokémon</string>
+    <string name="copy_to_clipboard_setting_summary_new">Copier automatiquement les infos scannées vers le presse-papier de copier-coller</string>
+    <string name="settings_title_behaviour">Comportement de l\'application</string>
+    <string name="settings_title_optional">Fonctionnalités optionnelles</string>
+    <string name="settings_title_mode">Mode de GoIV</string>
+    <string name="settings_title_uninteresting">Paramètres peu intéressants</string>
+</resources>
