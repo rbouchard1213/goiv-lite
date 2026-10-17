@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="instructions_title">Anleitung</string>
+    <string name="instructions_message">1. Geben Sie Ihr Trainer Level ein\n2. Drücken Sie die Start-Taste und akzeptieren Sie die Berechtigungen\n3. Schauen Sie sich Ihr Pokémon in \'Pokémon Go\' an\n4. Tippen Sie auf die IV Taste, um das Pokémon zu scannen\n5. Passen Sie die gescannten Daten bei Bedarf an\n6. Überprüfen Sie die IV!</string>
+    <string name="goiv_is_open_source">GoIV ist open source!</string>
+    <string name="trainer_level">Level</string>
+
+    <string-array name="teams">
+        <item name="mystic">"Weisheit"</item>
+        <item name="valor">"Wagemut"</item>
+        <item name="instinct">"Intuition"</item>
+    </string-array>
+
+
+    <string name="cancel">Abbrechen</string>
+    <string name="check_iv">Berechne IV</string>
+    <string name="cp">WP</string>
+    <string name="hp">KP</string>
+    <string name="pokemon_name">Pokémon Name:</string>
+
+    <string name="use_the_slider_below_to_align_the_arc">Verschiebe den roten Punkt mit dem Slider</string>
+    <string name="notification_title">GoIV läuft - Level %1$d</string>
+    <string name="close">Schließen</string>
+    <string name="main_permission">Berechtigungen erlauben</string>
+    <string name="main_start">Starten</string>
+    <string name="accept_screen_capture">Bildschirmaufnahme akzeptieren</string>
+    <string name="appraisal_refining">Bewertung verfeinern</string>
+    <string name="attack">Angriff</string>
+    <string name="atk">ANG</string>
+    <string name="auto_update_setting_summary">Automatisch nach Updates suchen, wenn die App benutzt wird</string>
+    <string name="auto_update_setting_title">automatische Aktualisierung</string>
+    <string name="back">Zurück</string>
+    <string name="avg">i.D.</string>
+    <string name="check_for_update_setting_summary">Prüfe, ob ein Update verfügbar ist</string>
+    <string name="check_for_update_setting_title">Auf Update überprüfen</string>
+    <string name="checking_for_update">Suchen nach Aktualisierungen…</string>
+    <string name="confirmation_dialog_setting_title">Bestätigungsdialog</string>
+    <string name="copy_to_clipboard_setting_title">in Zwischenablage kopieren</string>
+    <string name="defense">Verteidigung</string>
+    <string name="delete_screenshots_setting_summary">Lösche Screenshots vom GoIV automatisch</string>
+    <string name="delete_screenshots_setting_title">lösche Screenshots</string>
+    <string name="candy">Bonbon</string>
+    <string name="evolution">Entwicklung</string>
+    <string name="iv_perfect" formatted="false">% Perfekt</string>
+    <string name="launch_pokemon_go_setting_summary">Wechsel zu Pokémon Go, wenn die Starttaste geklickt wird</string>
+    <string name="launch_pokemon_go_setting_title">Starte Pokémon Go</string>
+    <string name="main_starting">Startet…</string>
+    <string name="main_stop">Stopp</string>
+    <string name="manual_screenshot_mode_setting_title">Verwende Screenshots um IVs zu berechnen</string>
+    <string name="missing_inputs">WP und KP werden benötigt.</string>
+    <string name="ongoing_update">Ein Update für GoIV wird bereits heruntergeladen</string>
+    <string name="possible_iv_combinations">%1$d mögliche IV Kombinationen</string>
+    <string name="powerup_calc_instructions">Power-up und Entwicklung Berechnung. Ziehe den Schieberegler um unterschiedliche Prognosen anzuzeigen</string>
+    <string name="scan_pokemon_failed">Scanvorgang fehlgeschlagen, bitte scrolle nach oben und versuche es nochmal!</string>
+    <string name="see_all">Alle anzeigen</string>
+    <string name="send_crash_reports_setting_summary">Hilfe die Entwicklung der App zu verbessern, indem anonyme crashrelevant Daten gesendet werden.</string>
+    <string name="send_crash_reports_setting_title">Sende Absturzberichte</string>
+    <string name="settings_page_title">Einstellungen</string>
+    <string name="stamina_hp">KP</string>
+    <string name="up_to_date">Die App ist auf dem aktuellsten Stand</string>
+    <string name="update_check_failed">Ein Fehler ist aufgetreten während auf nach eine neuen Version gesucht wurde. Bitte überprüfe deine Internetverbindung…</string>
+    <string name="wrong_pokemon_name_input"> wurde nicht gefunden.</string>
+    <string name="manual_screenshot_mode_setting_summary">Um Batterie zu sparen scanne Screenshots anstelle der automatischen Erkennung. Diese Einstellung muss für Android &lt;= Kitak (4.4) verwendet werden</string>
+    <string name="confirmation_dialog_setting_summary">Manuelles anpassen der Pokémon-Informationen bevor IV Berechnung erlauben</string>
+
+</resources>
