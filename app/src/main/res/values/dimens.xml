@@ -1,0 +1,14 @@
+<resources>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
+    <dimen name="token_height">46dp</dimen>
+
+    <!-- Pokefly dialogs -->
+    <dimen name="dialog_small_height_min">244dp</dimen> <!-- input and appraisal -->
+    <dimen name="dialog_large_height_min">244dp</dimen> <!-- power up, iv, moveset -->
+
+    <!-- Notification margins -->
+    <dimen name="notification_horizontal_padding">8dp</dimen>
+</resources>
