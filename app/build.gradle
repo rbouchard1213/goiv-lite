@@ -1,31 +1,9 @@
 /**
- * Repositories and dependencies for the build script
+ * goiv-lite: lightweight Pokemon GO IV checker.
+ * Single offline flavor, modern Android (AGP 8.x, SDK 34).
  */
-buildscript {
-    repositories {
-        maven { url 'https://maven.fabric.io/public' }
-    }
 
-    dependencies {
-        //noinspection GradleDynamicVersion
-        classpath 'io.fabric.tools:gradle:1.+'
-    }
-}
-
-/**
- * Repositories for the project
- * jCenter() is already called in project build.gradle
- */
-repositories {
-    maven { url 'https://maven.fabric.io/public' }
-}
-
-/**
- * Apply plugins and other Gradle scripts
- */
 apply plugin: 'com.android.application'
-//apply plugin: 'io.fabric'
-apply from: '../checkstyle/checkstyle.gradle'
 
 /**
  * Store keystore properties from keystore.properties in root folder if it exists
@@ -39,207 +17,73 @@ if (new File('keystore.properties').exists()) {
     keystoreProperties.keyPassword = 'your_key_password'
     keystoreProperties.storeFile = 'your_keystore.jks'
     keystoreProperties.storePassword = 'your_keystore_password'
-    keystoreProperties.keyAliasPlaystore = 'playstore_key_alias'
-    keystoreProperties.keyPasswordPlaystore = 'playstore_key_password'
-    keystoreProperties.storeFilePlaystore = 'playstore_keystore.jks'
-    keystoreProperties.storePasswordPlaystore = 'playstore_keystore_password'
 }
 
-/**
- * Android build
- */
 android {
-    /**
-     * Set configuration for signing release builds with keystore properties defined above
-     */
-    signingConfigs {
-        githubConfig {
-            keyAlias keystoreProperties['keyAlias']
-            keyPassword keystoreProperties['keyPassword']
-            storeFile file(keystoreProperties['storeFile'])
-            storePassword keystoreProperties['storePassword']
-        }
-        playstoreConfig { // App Signing upload key
-            keyAlias keystoreProperties['keyAliasPlaystore']
-            keyPassword keystoreProperties['keyPasswordPlaystore']
-            storeFile file(keystoreProperties['storeFilePlaystore'])
-            storePassword keystoreProperties['storePasswordPlaystore']
-        }
-    }
+    namespace "com.kamron.pogoiv"
+    compileSdk 34
 
-    /**
-     * Android SDK and build-tools version
-     * Update (both Gradle and local SDK) whenever possible
-     */
-    compileSdkVersion 30
-
-    /**
-     * Build configurations for APK
-     * Ensure the following values are updated before generating release builds:
-     * versionCode (Increment of 1)
-     * versionName (Based on Semantic Versioning 2.0 - http://semver.org/)
-     */
     defaultConfig {
-        minSdkVersion 19 /*Dont change this unless you know why*/
-        targetSdkVersion 29 /*Dont change this unless you know why*/
-        versionCode 69
-        versionName "5.5.2"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        applicationId "com.kamron.pogoiv"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0-lite"
         vectorDrawables.useSupportLibrary = true
     }
 
-    /**
-     * Product flavors
-     * Offline - No Internet permission and disable Crashlytics
-     * Online - Internet permission and enable Crashlytics
-     */
-    flavorDimensions "default"
-
-    productFlavors {
-        offline {
-            signingConfig signingConfigs.githubConfig
-            applicationId "com.swanberg.pogoiv.nointernet"
-            buildConfigField "boolean", "INTERNET_AVAILABLE", "false"
-            buildConfigField "boolean", "DISTRIBUTION_GITHUB", "true"
-            buildConfigField "boolean", "DISTRIBUTION_PLAYSTORE", "false"
-            ext.enableCrashlytics = false
-            dimension "default"
-        }
-
-        online {
-            signingConfig signingConfigs.githubConfig
-            applicationId "com.swanberg.pogoiv"
-            buildConfigField "boolean", "INTERNET_AVAILABLE", "true"
-            buildConfigField "boolean", "DISTRIBUTION_GITHUB", "true"
-            buildConfigField "boolean", "DISTRIBUTION_PLAYSTORE", "false"
-            ext.enableCrashlytics = true
-            dimension "default"
-        }
-
-        playstore {
-            signingConfig signingConfigs.playstoreConfig
-            applicationId = "org.opensource.goiv"
-            buildConfigField "boolean", "INTERNET_AVAILABLE", "true"
-            buildConfigField "boolean", "DISTRIBUTION_GITHUB", "false"
-            buildConfigField "boolean", "DISTRIBUTION_PLAYSTORE", "true"
-            ext.enableCrashlytics = true
-            dimension "default"
-        }
-    }
-
-    /**
-     * Build type
-     * debug - Disable Crashlytics
-     * release - Minify and proguard files
-     */
     buildTypes {
         debug {
             applicationIdSuffix ".debug"
-            ext.enableCrashlytics = false
         }
         release {
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro',
-                    'proguard-crashlytics.pro', 'proguard-guava.pro', 'proguard-butterknife.pro',
-                    'proguard-okhttp3.pro'
-            lintOptions {
-                disable 'MissingTranslation'
-            }
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
-    splits {
-        abi {
-            enable true
-            reset()
-            include 'armeabi-v7a'/**, 'arm64-v8a', 'x86', 'x86_64'**/
-        }
-    }
-    sourceSets {
-        onlineRelease {
-            // Contains the io.fabric.ApiKey meta-data
-            manifest.srcFile 'src/onlineRelease/FabricManifest.xml'
-        }
+    buildFeatures {
+        viewBinding true
     }
 
-    android.applicationVariants.all { variant ->
-        variant.outputs.all {
-            outputFileName = "GoIV-${variant.name}.${variant.versionName}.apk"
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+}
+
+// Rename APK outputs (AGP 8 API: outputFileName is a Property)
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set("goiv-lite-${variant.name}.apk")
         }
     }
 }
 
-/**
- * Project dependencies
- * compile - Compile library package into app APK
- * provided - Compile library package without included into app APK
- * apt - Compile library package without included into app APK (uses android-apt plugin for
- * annotation processing)
- */
 dependencies {
-    /**
-     * Builds Dependencies for All Builds.
-     */
-    compileOnly 'org.projectlombok:lombok:1.16.20'
-    annotationProcessor 'org.projectlombok:lombok:1.16.20'
-    implementation 'com.jakewharton:butterknife:8.8.1'
-    annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
-    implementation 'com.android.support:support-v4:27.1.1'
-    implementation 'com.android.support:appcompat-v7:27.1.1'
-    implementation 'com.android.support:preference-v7:27.1.1'
-    implementation 'com.android.support:recyclerview-v7:27.1.1'
-    implementation 'com.android.support:design:27.1.1'
-    implementation 'com.android.support:cardview-v7:27.1.1'
-    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
-    implementation 'com.android.support:support-annotations:27.1.1'
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+    // AndroidX
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+    implementation 'androidx.preference:preference:1.2.1'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.palette:palette:1.0.0'
+    implementation 'androidx.annotation:annotation:1.8.2'
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
+
+    // Utilities (kept: actively used in source)
     implementation 'com.google.guava:guava:24.1-android'
-    implementation 'com.google.code.gson:gson:2.8.2'
-    implementation 'com.google.code.findbugs:jsr305:3.0.2'
-    implementation 'org.apache.commons:commons-math3:3.6.1'
-    implementation 'com.jakewharton.timber:timber:4.7.0'
-    implementation 'com.rmtheis:tess-two:7.0.0'
-    implementation 'info.hoang8f:android-segmented:1.0.6'
-    implementation 'io.apptik.widget:multislider:1.2'
-    implementation 'com.pavelsikun:material-seekbar-preference:2.3.0'
-    implementation 'com.android.support:palette-v7:27.1.1'
-    implementation project(':openCVLibrary330')
+    implementation 'com.jakewharton.timber:timber:5.0.1'
 
-    /* for devMethods.thirdparty.pokebattler, temporally set for All Builds */
-//    implementation 'org.json:json:20160810' //used to generate moveset list
-    implementation 'com.squareup.okhttp3:okhttp:3.7.0'//used to generate moveset list
+    // OCR: ML Kit bundled Latin text recognition (offline, no Play Services)
+    implementation 'com.google.mlkit:text-recognition:16.0.1'
 
-    /**
-     * Online Build Dependencies
-     */
-    onlineImplementation 'com.squareup.okhttp3:okhttp:3.10.0'
-    onlineImplementation('com.crashlytics.sdk.android:crashlytics:2.9.2@aar') {
-        transitive = true
-    }
-
-    /**
-     * Play Store Build Dependencies
-     */
-    playstoreImplementation('com.crashlytics.sdk.android:crashlytics:2.9.2@aar') {
-        transitive = true
-    }
-
-    /**
-     * Test Build Dependencies
-     */
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'com.squareup.assertj:assertj-android:1.1.1'
-    testImplementation 'org.mockito:mockito-core:1.10.19'
-    testImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
-}
-
-/**
- * Enable Java deprecation/unchecked warnings
- */
-allprojects {
-    gradle.projectsEvaluated {
-        tasks.withType(JavaCompile) {
-            options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
-        }
-    }
+    // Tests
+    testImplementation 'junit:junit:4.13.2'
 }
