@@ -1,16 +1,13 @@
 package com.kamron.pogoiv.scanlogic;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
-import com.kamron.pogoiv.pokeflycomponents.AppraisalManager;
-import com.kamron.pogoiv.pokeflycomponents.MovesetsManager;
 import com.kamron.pogoiv.utils.LevelRange;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
@@ -36,8 +33,6 @@ public class ScanResult {
     public final int cp;
     public int hp;
     public boolean isLucky;
-    private ArrayList<MovesetData> movesets;
-    public MovesetData selectedMoveset;
     private ArrayList<IVCombination> iVCombinations = new ArrayList<>();
     public IVCombination selectedIVCombination;
     private int ivPercentHigh = 0;
@@ -72,22 +67,6 @@ public class ScanResult {
         this.gender = scanData.getPokemonGender();
         this.isLucky = scanData.getIsLucky();
 
-        LinkedHashSet<MovesetData> m;
-        try {
-            m = MovesetsManager.getMovesetsForDexNumber(pokemon.number);
-        } catch (NullPointerException e) {
-            m = null;
-        }
-
-        if (m != null) {
-            this.movesets = new ArrayList<>(m);
-            if (scanData.getFastMove() != null && scanData.getChargeMove() != null) {
-                // Detect the best matching moveset with the moves names Pokefly OCR'd
-                selectScannedMoveset(scanData.getFastMove(), scanData.getChargeMove());
-            }
-        } else {
-            this.movesets = new ArrayList<>();
-        }
     }
 
     public List<IVCombination> getIVCombinations() {
@@ -340,39 +319,6 @@ public class ScanResult {
             }
         }
 
-    }
-
-    public void refineWithAvailableInfoFrom(@NonNull AppraisalManager appraisalManager) {
-        ArrayList<IVCombination> refined = new ArrayList<>(iVCombinations.size());
-
-        for (IVCombination combination : iVCombinations) {
-            if ((!appraisalManager.attackValid || combination.att == appraisalManager.attack)
-                    && (!appraisalManager.defenseValid || combination.def == appraisalManager.defense)
-                    && (!appraisalManager.staminaValid || combination.sta == appraisalManager.stamina)) {
-                refined.add(combination);
-            }
-        }
-
-        iVCombinations = refined;
-
-        //Check if any appraisal has been done or if appraisal is uneccesary for the clipboard token.
-        hasBeenAppraiseRefined = iVCombinations.size() == 1;
-        updateHighAndLowValues();
-    }
-
-    private void selectScannedMoveset(@NonNull String moveFast, @NonNull String moveCharge) {
-        int bestDistance = Integer.MAX_VALUE;
-        for (MovesetData moveset : movesets) {
-            int fastDistance =
-                    Data.levenshteinDistance(moveFast.toLowerCase(), moveset.getFast().toLowerCase());
-            int chargeDistance =
-                    Data.levenshteinDistance(moveCharge.toLowerCase(), moveset.getCharge().toLowerCase());
-            int combinedDistance = (fastDistance + 1) * (chargeDistance + 1);
-            if (combinedDistance < bestDistance) {
-                selectedMoveset = moveset;
-                bestDistance = combinedDistance;
-            }
-        }
     }
 
 }
