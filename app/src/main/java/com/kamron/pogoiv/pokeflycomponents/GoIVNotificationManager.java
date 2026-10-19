@@ -29,6 +29,8 @@ public class GoIVNotificationManager {
 
     private static final String NOTIFICATION_CHANNEL_ID = "8959";
 
+    public static final String ACTION_RECALIBRATE_SCANAREA = "com.kamron.pogoiv.RECALIBRATE_SCANAREA";
+
     private static Pokefly pokefly;
 
 
