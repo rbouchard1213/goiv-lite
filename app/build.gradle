@@ -78,7 +78,9 @@ dependencies {
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
 
     // Utilities (kept: actively used in source)
-    implementation 'com.google.guava:guava:24.1-android'
+    implementation('com.google.guava:guava:24.1-android') {
+        exclude group: 'com.google.guava', module: 'listenablefuture'
+    }
     implementation 'com.jakewharton.timber:timber:5.0.1'
 
     // OCR: ML Kit bundled Latin text recognition (offline, no Play Services)
