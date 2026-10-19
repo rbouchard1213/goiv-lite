@@ -5,21 +5,14 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
-import android.support.annotation.NonNull;
-import android.support.v4.widget.Space;
+import androidx.annotation.NonNull;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.SeekBar;
-import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.common.base.Function;
@@ -28,6 +21,7 @@ import com.google.common.base.Strings;
 import com.kamron.pogoiv.GoIVSettings;
 import com.kamron.pogoiv.Pokefly;
 import com.kamron.pogoiv.R;
+import com.kamron.pogoiv.databinding.FractionInputBinding;
 import com.kamron.pogoiv.scanlogic.Data;
 import com.kamron.pogoiv.scanlogic.IVCombination;
 import com.kamron.pogoiv.scanlogic.PokeInfoCalculator;
@@ -39,57 +33,16 @@ import com.kamron.pogoiv.utils.GUIColorFromPokeType;
 import com.kamron.pogoiv.utils.LevelRange;
 import com.kamron.pogoiv.utils.ReactiveColorListener;
 import com.kamron.pogoiv.utils.fractions.Fraction;
-import com.kamron.pogoiv.widgets.PokemonSpinnerAdapter;
 
 import java.util.ArrayList;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-import butterknife.OnTextChanged;
 import timber.log.Timber;
 
 
 public class InputFraction extends Fraction implements ReactiveColorListener {
 
+    private FractionInputBinding binding;
     private PokemonSpinnerAdapter pokeInputAdapter;
-    @BindView(R.id.spnPokemonName)
-    Spinner pokeInputSpinner;
-
-    //results pokemon picker auto complete
-    @BindView(R.id.autoCompleteTextView1)
-    AutoCompleteTextView autoCompleteTextView1;
-
-    @BindView(R.id.pokePickerToggleSpinnerVsInput)
-    ImageView pokePickerToggleSpinnerVsInput;
-
-    @BindView(R.id.inputHeaderBG)
-    LinearLayout inputHeader;
-
-    @BindView(R.id.etCp)
-    EditText pokemonCPEdit;
-    @BindView(R.id.etHp)
-    EditText pokemonHPEdit;
-    @BindView(R.id.etCandy)
-    EditText pokemonCandyEdit;
-    @BindView(R.id.sbArcAdjust)
-    SeekBar arcAdjustBar;
-    @BindView(R.id.levelIndicator)
-    TextView levelIndicator;
-
-
-    @BindView(R.id.btnCheckIv)
-    Button btnCheckIv;
-
-    @BindView(R.id.appraisalButton)
-    Button appraisalButton;
-
-    //PokeSpam
-    @BindView(R.id.llPokeSpamSpace)
-    Space llPokeSpamSpace;
-    @BindView(R.id.llPokeSpamDialogInputContentBox)
-    LinearLayout pokeSpamDialogInputContentBox;
-
 
     private Pokefly pokefly;
     private PokeInfoCalculator pokeInfoCalculator;
@@ -102,8 +55,6 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
     public InputFraction(@NonNull Pokefly pokefly) {
         this.pokefly = pokefly;
         this.pokeInfoCalculator = PokeInfoCalculator.getInstance();
-
-
     }
 
     @Override public int getLayoutResId() {
@@ -111,13 +62,16 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
     }
 
     @Override public void onCreate(@NonNull View rootView) {
-        ButterKnife.bind(this, rootView);
+        binding = FractionInputBinding.bind(rootView);
+
+        // goiv-lite v1: appraisal fraction was cut
+        binding.appraisalButton.setVisibility(View.GONE);
 
         // Initialize pokemon species spinner
         pokeInputAdapter = new PokemonSpinnerAdapter(pokefly, R.layout.spinner_pokemon, new ArrayList<Pokemon>());
-        pokeInputSpinner.setAdapter(pokeInputAdapter);
+        binding.spnPokemonName.setAdapter(pokeInputAdapter);
 
-        pokeInputSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        binding.spnPokemonName.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 updateIVInputFractionPreview();
             }
@@ -132,6 +86,25 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
         // Setup manual pokemon species input
         initializePokemonAutoCompleteTextView();
 
+        // Watch text fields for changes (replaces ButterKnife @OnTextChanged)
+        TextWatcher inputWatcher = new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { }
+            @Override public void afterTextChanged(Editable s) {
+                updateIVFractionSpinnerDueToTextChange();
+            }
+        };
+        binding.etCp.addTextChangedListener(inputWatcher);
+        binding.etHp.addTextChangedListener(inputWatcher);
+        binding.etCandy.addTextChangedListener(inputWatcher);
+        binding.autoCompleteTextView1.addTextChangedListener(inputWatcher);
+
+        binding.pokePickerToggleSpinnerVsInput.setOnClickListener(v -> toggleSpinnerVsInput());
+        binding.btnDecrementLevel.setOnClickListener(v -> decrementLevel());
+        binding.btnIncrementLevel.setOnClickListener(v -> incrementLevel());
+        binding.btnCheckIv.setOnClickListener(v -> checkIv());
+        binding.btnClose.setOnClickListener(v -> onClose());
+
         PokemonNameCorrector.PokeDist possiblePoke;
         // If not-null, then the Pokemon has been manually set, so we shouldn't guess it.
         if (Pokefly.scanData.getPokemon() != null) {
@@ -143,24 +116,24 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
 
         // set color based on similarity
         if (possiblePoke.dist == 0) {
-            pokeInputSpinner.setBackgroundColor(Color.parseColor("#FFF9F9F9"));
+            binding.spnPokemonName.setBackgroundColor(Color.parseColor("#FFF9F9F9"));
         } else if (possiblePoke.dist < 2) {
-            pokeInputSpinner.setBackgroundColor(Color.parseColor("#ffffdd"));
+            binding.spnPokemonName.setBackgroundColor(Color.parseColor("#ffffdd"));
         } else {
-            pokeInputSpinner.setBackgroundColor(Color.parseColor("#ffdddd"));
+            binding.spnPokemonName.setBackgroundColor(Color.parseColor("#ffdddd"));
         }
 
         resetToSpinner(); //always have the input as spinner as default
 
-        autoCompleteTextView1.setText("");
+        binding.autoCompleteTextView1.setText("");
         pokeInputAdapter.updatePokemonList(
                 pokeInfoCalculator.getEvolutionForms(possiblePoke.pokemon));
         int selection = pokeInputAdapter.getPosition(possiblePoke.pokemon);
-        pokeInputSpinner.setSelection(selection);
+        binding.spnPokemonName.setSelection(selection);
 
-        pokemonHPEdit.setText(optionalIntToString(Pokefly.scanData.getPokemonHP()));
-        pokemonCPEdit.setText(optionalIntToString(Pokefly.scanData.getPokemonCP()));
-        pokemonCandyEdit.setText(optionalIntToString(Pokefly.scanData.getPokemonCandyAmount()));
+        binding.etHp.setText(optionalIntToString(Pokefly.scanData.getPokemonHP()));
+        binding.etCp.setText(optionalIntToString(Pokefly.scanData.getPokemonCP()));
+        binding.etCandy.setText(optionalIntToString(Pokefly.scanData.getPokemonCandyAmount()));
 
         adjustArcPointerBar(Pokefly.scanData.getEstimatedPokemonLevel().min);
 
@@ -192,7 +165,7 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
 
     private void saveToPokefly() {
         if (isInitiated){
-            final String hp = pokemonHPEdit.getText().toString();
+            final String hp = binding.etHp.getText().toString();
             if (!Strings.isNullOrEmpty(hp)) {
                 try {
                     Pokefly.scanData.setPokemonHP(Integer.parseInt(hp));
@@ -200,7 +173,7 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
                     Timber.d(e);
                 }
             }
-            final String cp = pokemonCPEdit.getText().toString();
+            final String cp = binding.etCp.getText().toString();
             if (!Strings.isNullOrEmpty(cp)) {
                 try {
                     Pokefly.scanData.setPokemonCP(Integer.parseInt(cp));
@@ -208,7 +181,7 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
                     Timber.d(e);
                 }
             }
-            final String candies = pokemonCandyEdit.getText().toString();
+            final String candies = binding.etCandy.getText().toString();
             if (!Strings.isNullOrEmpty(candies)) {
                 try {
                     Pokefly.scanData.setPokemonCandyAmount(Integer.parseInt(candies));
@@ -219,33 +192,28 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
             Pokemon pokemon = interpretWhichPokemonUserInput();
             if (pokemon != null) {
               Pokefly.scanData.setPokemon(pokemon);
-
-
             }
         }
-
     }
 
     /**
      * In the input screen, switches between the two methods the user has of picking pokemon - a dropdown list, or
      * typing.
      */
-    @OnClick({R.id.pokePickerToggleSpinnerVsInput})
     public void toggleSpinnerVsInput() {
-        if (autoCompleteTextView1.getVisibility() == View.GONE) {
-            autoCompleteTextView1.setVisibility(View.VISIBLE);
-
+        if (binding.autoCompleteTextView1.getVisibility() == View.GONE) {
+            binding.autoCompleteTextView1.setVisibility(View.VISIBLE);
 
             Bitmap icon = BitmapFactory.decodeResource(pokefly.getResources(),
                     R.drawable.toggleselectwrite);
-            pokePickerToggleSpinnerVsInput.setImageBitmap(icon);
-            autoCompleteTextView1.requestFocus();
-            pokeInputSpinner.setVisibility(View.GONE);
+            binding.pokePickerToggleSpinnerVsInput.setImageBitmap(icon);
+            binding.autoCompleteTextView1.requestFocus();
+            binding.spnPokemonName.setVisibility(View.GONE);
         } else {
             resetToSpinner();
             Bitmap icon = BitmapFactory.decodeResource(pokefly.getResources(),
                     R.drawable.toggleselectmenu);
-            pokePickerToggleSpinnerVsInput.setImageBitmap(icon);
+            binding.pokePickerToggleSpinnerVsInput.setImageBitmap(icon);
         }
 
         updateGuiColors();
@@ -253,17 +221,16 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
 
 
     private void resetToSpinner() {
-        autoCompleteTextView1.setVisibility(View.GONE);
-        pokeInputSpinner.setVisibility(View.VISIBLE);
+        binding.autoCompleteTextView1.setVisibility(View.GONE);
+        binding.spnPokemonName.setVisibility(View.VISIBLE);
     }
 
     private void adjustArcPointerBar(double estimatedPokemonLevel) {
         pokefly.setArcPointer(estimatedPokemonLevel);
-        arcAdjustBar.setProgress(Data.levelToLevelIdx(estimatedPokemonLevel));
+        binding.sbArcAdjust.setProgress(Data.levelToLevelIdx(estimatedPokemonLevel));
         updateIVInputFractionPreview();
     }
 
-    @OnTextChanged({R.id.etCp, R.id.etHp, R.id.etCandy, R.id.autoCompleteTextView1})
     public void updateIVFractionSpinnerDueToTextChange() {
         updateIVInputFractionPreview();
     }
@@ -272,14 +239,13 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
      * Update the text on the 'next' button to indicate quick IV overview
      */
     private void updateIVInputFractionPreview() {
-        if(isInitiated){
+        if (isInitiated) {
             saveToPokefly();
-
-            updateIVPreview(pokefly, btnCheckIv);
+            updateIVPreview(pokefly, binding.btnCheckIv);
         }
     }
 
-    public static void updateIVPreview(Pokefly pokefly, Button btnCheckIv) {
+    public static void updateIVPreview(Pokefly pokefly, android.widget.Button btnCheckIv) {
         ScanResult scanResult = null;
         try {
             scanResult = pokefly.computeIVWithoutUIChange();
@@ -290,7 +256,6 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
         // If it couldn't compute a scan result it should behave the same as if there are no valid
         // IV combinations.
         int possibleIVs = scanResult == null ? 0 : scanResult.getIVCombinations().size();
-        //btnCheckIv.setEnabled(possibleIVs != 0);
         if (possibleIVs == 0) {
             btnCheckIv.setText("? | More info");
         } else {
@@ -307,7 +272,6 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
         }
     }
 
-    @OnClick(R.id.btnDecrementLevel)
     public void decrementLevel() {
         if (Pokefly.scanData.getEstimatedPokemonLevel().min > Data.MINIMUM_POKEMON_LEVEL) {
             Pokefly.scanData.getEstimatedPokemonLevel().dec();
@@ -315,9 +279,8 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
         }
     }
 
-    @OnClick(R.id.btnIncrementLevel)
     public void incrementLevel() {
-        if (Data.levelToLevelIdx(Pokefly.scanData.getEstimatedPokemonLevel().min) < arcAdjustBar.getMax()) {
+        if (Data.levelToLevelIdx(Pokefly.scanData.getEstimatedPokemonLevel().min) < binding.sbArcAdjust.getMax()) {
             Pokefly.scanData.getEstimatedPokemonLevel().inc();
             adjustArcPointerBar(Pokefly.scanData.getEstimatedPokemonLevel().min);
         }
@@ -328,27 +291,26 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
      */
     private void createArcAdjuster() {
         // The max seek bar value will be the maximum wild pokemon level or the trainer max capture level if higher
-        arcAdjustBar.setMax(Math.max(Data.levelToLevelIdx(Data.MAXIMUM_WILD_POKEMON_LEVEL),
+        binding.sbArcAdjust.setMax(Math.max(Data.levelToLevelIdx(Data.MAXIMUM_WILD_POKEMON_LEVEL),
                 Data.levelToLevelIdx(Data.trainerLevelToMaxPokeLevel(pokefly.getTrainerLevel()))));
 
-        arcAdjustBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        binding.sbArcAdjust.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
             @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            public void onProgressChanged(android.widget.SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
                     Pokefly.scanData.setEstimatedPokemonLevelRange(new LevelRange(Data.levelIdxToLevel(progress)));
                 }
                 pokefly.setArcPointer(Pokefly.scanData.getEstimatedPokemonLevel().min);
-                levelIndicator.setText(Pokefly.scanData.getEstimatedPokemonLevel().toString());
-
+                binding.levelIndicator.setText(Pokefly.scanData.getEstimatedPokemonLevel().toString());
             }
 
             @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                btnCheckIv.setText("...");
+            public void onStartTrackingTouch(android.widget.SeekBar seekBar) {
+                binding.btnCheckIv.setText("...");
             }
 
             @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
+            public void onStopTrackingTouch(android.widget.SeekBar seekBar) {
                 updateIVInputFractionPreview();
             }
         });
@@ -360,8 +322,8 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
     private void initializePokemonAutoCompleteTextView() {
         String[] pokeList = pokeInfoCalculator.getPokemonNamesWithFormArray();
         ArrayAdapter<String> adapter = new ArrayAdapter<>(pokefly, R.layout.autocomplete_pokemon_list_item, pokeList);
-        autoCompleteTextView1.setAdapter(adapter);
-        autoCompleteTextView1.setThreshold(1);
+        binding.autoCompleteTextView1.setAdapter(adapter);
+        binding.autoCompleteTextView1.setThreshold(1);
     }
 
     /**
@@ -372,13 +334,13 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
     private void showCandyTextBoxBasedOnSettings() {
         //enable/disable visibility based on PokeSpam enabled or not
         if (GoIVSettings.getInstance(pokefly).isPokeSpamEnabled()) {
-            llPokeSpamSpace.setVisibility(View.VISIBLE);
-            pokeSpamDialogInputContentBox.setVisibility(View.VISIBLE);
-            pokemonHPEdit.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+            binding.llPokeSpamSpace.setVisibility(View.VISIBLE);
+            binding.llPokeSpamDialogInputContentBox.setVisibility(View.VISIBLE);
+            binding.etHp.setImeOptions(EditorInfo.IME_ACTION_NEXT);
         } else {
-            llPokeSpamSpace.setVisibility(View.GONE);
-            pokeSpamDialogInputContentBox.setVisibility(View.GONE);
-            pokemonHPEdit.setImeOptions(EditorInfo.IME_ACTION_DONE);
+            binding.llPokeSpamSpace.setVisibility(View.GONE);
+            binding.llPokeSpamDialogInputContentBox.setVisibility(View.GONE);
+            binding.etHp.setImeOptions(EditorInfo.IME_ACTION_DONE);
         }
     }
 
@@ -401,11 +363,10 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
     private Pokemon interpretWhichPokemonUserInput() {
         //below picks a pokemon from either the pokemon spinner or the user text input
         Pokemon pokemon = null;
-        if (pokeInputSpinner.getVisibility() == View.VISIBLE) { //user picked pokemon from spinner
-            //This could be pokemon = pokeInputSpinner.getSelectedItem(); if they didn't give it type Object.
-            pokemon = pokeInputAdapter.getItem(pokeInputSpinner.getSelectedItemPosition());
+        if (binding.spnPokemonName.getVisibility() == View.VISIBLE) { //user picked pokemon from spinner
+            pokemon = pokeInputAdapter.getItem(binding.spnPokemonName.getSelectedItemPosition());
         } else { //user typed manually
-            String userInput = autoCompleteTextView1.getText().toString();
+            String userInput = binding.autoCompleteTextView1.getText().toString();
             int lowestDist = Integer.MAX_VALUE;
             for (PokemonBase poke : pokeInfoCalculator.getPokedex()) {
                 int dist = Data.levenshteinDistance(poke.name, userInput);
@@ -435,35 +396,27 @@ public class InputFraction extends Fraction implements ReactiveColorListener {
     /**
      * Method called when user presses "check iv" in the input screen, which takes the user to the result screen.
      */
-    @OnClick(R.id.btnCheckIv)
     void checkIv() {
         saveToPokefly();
         pokefly.computeIv();
     }
 
-    @OnClick(R.id.appraisalButton)
-    void onAppraisal() {
-        pokefly.navigateToAppraisalFraction();
-    }
-
-    @OnClick(R.id.btnClose)
     void onClose() {
         pokefly.closeInfoDialog();
     }
 
     @Override public void updateGuiColors() {
-        //int c = Color.parseColor("#47253C");
         int c = GUIColorFromPokeType.getInstance().getColor();
-        inputHeader.setBackgroundColor(c);
-        appraisalButton.setBackgroundColor(c);
-        pokemonCPEdit.setTextColor(c);
-        pokemonHPEdit.setTextColor(c);
-        pokemonCandyEdit.setTextColor(c);
-        btnCheckIv.setBackgroundColor(c);
+        binding.inputHeaderBG.setBackgroundColor(c);
+        binding.etCp.setTextColor(c);
+        binding.etHp.setTextColor(c);
+        binding.etCandy.setTextColor(c);
+        binding.btnCheckIv.setBackgroundColor(c);
 
         PorterDuff.Mode mMode = PorterDuff.Mode.SRC_ATOP;
-        Drawable d = pokePickerToggleSpinnerVsInput.getDrawable();
-        d.setColorFilter(c,mMode);
-
+        Drawable d = binding.pokePickerToggleSpinnerVsInput.getDrawable();
+        if (d != null) {
+            d.setColorFilter(c, mMode);
+        }
     }
 }
