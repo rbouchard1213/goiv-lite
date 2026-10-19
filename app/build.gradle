@@ -19,6 +19,11 @@ if (new File('keystore.properties').exists()) {
     keystoreProperties.storePassword = 'your_keystore_password'
 }
 
+// Exclude duplicate ListenableFuture (guava vs standalone listenablefuture artifact)
+configurations.all {
+    exclude group: 'com.google.guava', module: 'listenablefuture'
+}
+
 android {
     namespace "com.kamron.pogoiv"
     compileSdk 34
