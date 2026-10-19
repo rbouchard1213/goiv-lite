@@ -7,21 +7,13 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.content.ContextCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import android.widget.RemoteViews;
-import android.widget.Toast;
 
-import com.kamron.pogoiv.GoIVSettings;
 import com.kamron.pogoiv.Pokefly;
 import com.kamron.pogoiv.R;
-import com.kamron.pogoiv.ScreenGrabber;
-import com.kamron.pogoiv.ScreenShotHelper;
 import com.kamron.pogoiv.activities.MainActivity;
-import com.kamron.pogoiv.activities.OcrCalibrationResultActivity;
-import com.kamron.pogoiv.activities.SettingsActivity;
 
 import static android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION;
 
@@ -39,7 +31,6 @@ public class GoIVNotificationManager {
 
     private static Pokefly pokefly;
 
-    public static final String ACTION_RECALIBRATE_SCANAREA = "com.kamron.pogoiv.ACTION_RECALIBRATE_SCANAREA";
 
     public GoIVNotificationManager(Pokefly pokefly) {
         this.pokefly = pokefly;
@@ -63,8 +54,8 @@ public class GoIVNotificationManager {
         contentView.setOnClickPendingIntent(R.id.root, openAppPendingIntent);
         contentBigView.setOnClickPendingIntent(R.id.root, openAppPendingIntent);
 
-        // Open settings action
-        Intent startSettingAppIntent = new Intent(pokefly, SettingsActivity.class);
+        // Open app action (settings screen was cut in goiv-lite)
+        Intent startSettingAppIntent = new Intent(pokefly, MainActivity.class);
         PendingIntent startSettingsPendingIntent = PendingIntent.getActivity(
                 pokefly, 0, startSettingAppIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         contentView.setOnClickPendingIntent(R.id.settings, startSettingsPendingIntent);
@@ -120,13 +111,9 @@ public class GoIVNotificationManager {
         contentView.setOnClickPendingIntent(R.id.root, openAppPendingIntent);
         contentBigView.setOnClickPendingIntent(R.id.root, openAppPendingIntent);
 
-        // Recalibrate action
-        Intent recalibrateScreenScanningIntent = new Intent(pokefly, NotificationActionService.class)
-                .setAction(ACTION_RECALIBRATE_SCANAREA);
-        PendingIntent recalibrateScreenScanningPendingIntent = PendingIntent.getService(
-                pokefly, 0, recalibrateScreenScanningIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        contentView.setOnClickPendingIntent(R.id.recalibrate, recalibrateScreenScanningPendingIntent);
-        contentBigView.setOnClickPendingIntent(R.id.recalibrate, recalibrateScreenScanningPendingIntent);
+        // Recalibration was cut in goiv-lite: hide its button
+        contentView.setViewVisibility(R.id.recalibrate, android.view.View.GONE);
+        contentBigView.setViewVisibility(R.id.recalibrate, android.view.View.GONE);
 
         // Stop service action
         Intent stopServiceIntent = Pokefly.createStopIntent(pokefly);
@@ -179,7 +166,8 @@ public class GoIVNotificationManager {
     }
 
     /**
-     * The class which receives the intent to recalibrate the scan area.
+     * Receives notification actions. Recalibration was cut in goiv-lite, so this is a no-op
+     * placeholder kept because the manifest declares the service.
      */
     public static class NotificationActionService extends IntentService {
         public NotificationActionService() {
@@ -188,57 +176,7 @@ public class GoIVNotificationManager {
 
         @Override
         protected void onHandleIntent(Intent intent) {
-            String action = intent.getAction();
-            if (ACTION_RECALIBRATE_SCANAREA.equals(action)) {
-                Handler mainThreadHandler = new Handler(Looper.getMainLooper());
-
-                if (GoIVSettings.getInstance(this).isManualScreenshotModeEnabled()) {
-                    // Close the notification shade
-                    sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-                    // Tell the user that the next screenshot will be used to recalibrate GoIV
-                    ScreenShotHelper.sShouldRecalibrateWithNextScreenshot = true;
-                    mainThreadHandler.post(new Runnable() {
-                        @Override public void run() {
-                            Toast.makeText(NotificationActionService.this,
-                                    R.string.ocr_calibration_screenshot_mode, Toast.LENGTH_LONG).show();
-                        }
-                    });
-
-                } else { // Start calibration!
-                    // Close the notification shade so we can screenshot pogo
-                    sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-
-                    mainThreadHandler.post(new Runnable() {
-                        @Override public void run() {
-                            if (pokefly != null
-                                    && pokefly.getScreenWatcher() != null
-                                    && pokefly.getIvButton() != null) {
-                                // Hide IV button: it might interfere
-                                pokefly.getIvButton().setShown(false, false);
-                                // Cancel pending quick IV previews: they might get the IV button to show again
-                                pokefly.getScreenWatcher().cancelPendingScreenScan();
-                            }
-                        }
-                    });
-                    mainThreadHandler.post(new Runnable() {
-                        @Override public void run() {
-                            Toast.makeText(pokefly, R.string.recalibrating_please_wait, Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                    mainThreadHandler.postDelayed(new Runnable() {
-                        public void run() {
-                            if (ScreenGrabber.getInstance() == null) {
-                                return; // Don't recalibrate when screen watching isn't running!!!
-                            }
-
-                            OcrCalibrationResultActivity.startCalibration(NotificationActionService.this,
-                                    ScreenGrabber.getInstance().grabScreen(),
-                                    pokefly.getCurrentStatusBarHeight(),
-                                    pokefly.getCurrentNavigationBarHeight());
-                        }
-                    }, 4100);
-                }
-            }
+            // No actions handled in goiv-lite v1.
         }
     }
 }

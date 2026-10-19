@@ -3,12 +3,9 @@ package com.kamron.pogoiv;
 import android.app.Activity;
 import android.app.Service;
 import android.content.BroadcastReceiver;
-import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
@@ -17,9 +14,9 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
-import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.util.DisplayMetrics;
 import android.view.ContextThemeWrapper;
 import android.view.Gravity;
@@ -33,40 +30,28 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.common.base.Optional;
-import com.kamron.pogoiv.clipboardlogic.ClipboardTokenHandler;
-import com.kamron.pogoiv.pokeflycomponents.AppraisalManager;
 import com.kamron.pogoiv.pokeflycomponents.GoIVNotificationManager;
 import com.kamron.pogoiv.pokeflycomponents.IVPopupButton;
-import com.kamron.pogoiv.pokeflycomponents.IVPreviewPrinter;
-import com.kamron.pogoiv.pokeflycomponents.MovesetsManager;
-import com.kamron.pogoiv.pokeflycomponents.ScreenWatcher;
-import com.kamron.pogoiv.pokeflycomponents.fractions.AppraisalFraction;
-import com.kamron.pogoiv.pokeflycomponents.fractions.IVCombinationsFraction;
 import com.kamron.pogoiv.pokeflycomponents.fractions.IVResultFraction;
 import com.kamron.pogoiv.pokeflycomponents.fractions.InputFraction;
-import com.kamron.pogoiv.pokeflycomponents.fractions.MovesetFraction;
-import com.kamron.pogoiv.pokeflycomponents.fractions.PowerUpFraction;
 import com.kamron.pogoiv.pokeflycomponents.ocrhelper.OcrHelper;
 import com.kamron.pogoiv.pokeflycomponents.ocrhelper.ScanPoint;
 import com.kamron.pogoiv.scanlogic.Data;
-import com.kamron.pogoiv.scanlogic.IVCombination;
-import com.kamron.pogoiv.scanlogic.MovesetData;
 import com.kamron.pogoiv.scanlogic.PokeInfoCalculator;
 import com.kamron.pogoiv.scanlogic.Pokemon;
 import com.kamron.pogoiv.scanlogic.PokemonNameCorrector;
 import com.kamron.pogoiv.scanlogic.ScanData;
 import com.kamron.pogoiv.scanlogic.ScanResult;
-import com.kamron.pogoiv.utils.CopyUtils;
 import com.kamron.pogoiv.utils.LevelRange;
 import com.kamron.pogoiv.utils.fractions.FractionManager;
+import com.kamron.pogoiv.databinding.DialogInfoWindowBinding;
 
-import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.List;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 
 /**
  * Currently, the central service in Pokemon Go, dealing with everything except
@@ -117,6 +102,7 @@ public class Pokefly extends Service {
     public static ScanResult scanResult;
 
     private int trainerLevel;
+    private final ExecutorService scanExecutor = Executors.newSingleThreadExecutor();
 
     private boolean receivedInfo = false;
     private boolean infoShownSent = false;
@@ -128,29 +114,21 @@ public class Pokefly extends Service {
     private FractionManager fractionManager;
     private WindowManager windowManager;
     private DisplayMetrics displayMetrics;
-    private ClipboardManager clipboard;
-    private SharedPreferences sharedPref;
     private ScreenGrabber screen;
-    private ScreenShotHelper screenShotHelper;
     private OcrHelper ocr;
 
     // Pokefly components
-    private ScreenWatcher screenWatcher;
     private IVPopupButton ivButton;
-    private ClipboardTokenHandler clipboardTokenHandler;
-    private IVPreviewPrinter ivPreviewPrinter;
     private ImageView arcPointer;
     private PokeInfoCalculator pokeInfoCalculator;
-    private AppraisalManager appraisalManager;
     private PokemonNameCorrector nameCorrector;
     private View sizeDetector1;
     private View sizeDetector2;
 
 
-    @BindView(R.id.infoLayout)
-    FrameLayout infoLayout;
-    @BindView(R.id.fractionContainer)
-    FrameLayout fractionContainer;
+    private DialogInfoWindowBinding infoBinding;
+    private FrameLayout infoLayout;
+    private FrameLayout fractionContainer;
 
 
     @SuppressWarnings("deprecation")
@@ -246,16 +224,8 @@ public class Pokefly extends Service {
         return null;
     }
 
-    public ScreenWatcher getScreenWatcher() {
-        return screenWatcher;
-    }
-
     public IVPopupButton getIvButton() {
         return ivButton;
-    }
-
-    public ClipboardTokenHandler getClipboardTokenHandler() {
-        return clipboardTokenHandler;
     }
 
     public OcrHelper getOcr() {
@@ -264,10 +234,6 @@ public class Pokefly extends Service {
 
     public int getTrainerLevel() {
         return trainerLevel;
-    }
-
-    public IVPreviewPrinter getIvPreviewPrinter() {
-        return ivPreviewPrinter;
     }
 
     public boolean getInfoShownSent() {
@@ -287,10 +253,7 @@ public class Pokefly extends Service {
         displayMetrics = getResources().getDisplayMetrics();
         initOcr();
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-        sharedPref = getSharedPreferences(PREF_USER_CORRECTIONS, Context.MODE_PRIVATE);
 
-        MovesetsManager.init(this);
 
         LocalBroadcastManager.getInstance(this).registerReceiver(displayInfo, new IntentFilter(ACTION_SEND_INFO));
         LocalBroadcastManager.getInstance(this).registerReceiver(processBitmap,
@@ -310,8 +273,6 @@ public class Pokefly extends Service {
 
         running = true;
         GoIVNotificationManager goIVNotificationManager = new GoIVNotificationManager(this);
-        ivPreviewPrinter = new IVPreviewPrinter(this);
-        clipboardTokenHandler = new ClipboardTokenHandler(this);
 
         switch (intent.getAction()) {
             case ACTION_STOP:
@@ -331,15 +292,10 @@ public class Pokefly extends Service {
 
                 goIVNotificationManager.showRunningNotification();
 
-                startedInManualScreenshotMode = GoIVSettings.getInstance(this).isManualScreenshotModeEnabled();
-                if (!startedInManualScreenshotMode) {
-                    // Ask MainActivity to create a ScreenGrabber for us, and wait for it to finish
-                    LocalBroadcastManager.getInstance(this)
-                            .sendBroadcast(new Intent(ACTION_REQUEST_SCREEN_GRABBER));
-                } else {
-                    appraisalManager = new AppraisalManager(null, this);
-                    screenShotHelper = ScreenShotHelper.start(Pokefly.this);
-                }
+                startedInManualScreenshotMode = false;
+                // Ask MainActivity to create a ScreenGrabber for us, and wait for it to finish
+                LocalBroadcastManager.getInstance(this)
+                        .sendBroadcast(new Intent(ACTION_REQUEST_SCREEN_GRABBER));
                 break;
             case ACTION_BEGIN:
                 try {
@@ -352,9 +308,6 @@ public class Pokefly extends Service {
                     }
                     stopSelf();
                 }
-                appraisalManager = new AppraisalManager(screen, this);
-                screenWatcher = new ScreenWatcher(this, fractionManager, appraisalManager);
-                screenWatcher.watchScreen();
                 break;
         }
         //We have intent data, it's possible this service will be killed and we would want to recreate it
@@ -451,15 +404,9 @@ public class Pokefly extends Service {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(displayInfo);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(processBitmap);
 
-        if (!startedInManualScreenshotMode) {
-            screenWatcher.unwatchScreen();
-            if (screen != null) {
-                screen.exit();
-                screen = null;
-            }
-        } else {
-            screenShotHelper.stop();
-            screenShotHelper = null;
+        if (screen != null) {
+            screen.exit();
+            screen = null;
         }
         ivButton.setShown(false, infoShownSent);
         windowManager.removeView(ivButton);
@@ -472,6 +419,7 @@ public class Pokefly extends Service {
         ocr = null;
 
         running = false;
+        scanExecutor.shutdownNow();
         LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(ACTION_UPDATE_UI));
 
         super.onDestroy();
@@ -529,7 +477,9 @@ public class Pokefly extends Service {
         Context themedContext = new ContextThemeWrapper(this, R.style.AppTheme_Dialog);
         View v = LayoutInflater.from(themedContext).inflate(R.layout.dialog_info_window, null);
         layoutParams.gravity = Gravity.CENTER | Gravity.BOTTOM;
-        ButterKnife.bind(this, v);
+        infoBinding = DialogInfoWindowBinding.bind(v);
+        infoLayout = infoBinding.infoLayout;
+        fractionContainer = infoBinding.fractionContainer;
     }
 
     /**
@@ -574,12 +524,6 @@ public class Pokefly extends Service {
         scanResult = new ScanResult(nameCorrector, scanData);
 
         pokeInfoCalculator.getIVPossibilities(scanResult);
-        scanResult.refineWithAvailableInfoFrom(appraisalManager);
-
-        // Don't run clipboard logic if scan failed - some tokens might crash the program.
-        if (scanResult.getIVCombinationsCount() > 0) {
-            addClipboardInfoIfSettingOn(scanResult);
-        }
 
         closeKeyboard();
         navigateToIVResultFraction();
@@ -592,9 +536,6 @@ public class Pokefly extends Service {
     public ScanResult computeIVWithoutUIChange(){
         ScanResult scanReturner = new ScanResult(nameCorrector, scanData);
         pokeInfoCalculator.getIVPossibilities(scanReturner);
-        if (appraisalManager != null){
-            scanReturner.refineWithAvailableInfoFrom(appraisalManager);
-        }
         return scanReturner;
     }
 
@@ -603,29 +544,7 @@ public class Pokefly extends Service {
      * screenshot, and then deletes the screenshot.
      */
     public void deleteScreenShotIfRequired() {
-        if (startedInManualScreenshotMode && screenShotPath != null) {
-            if (GoIVSettings.getInstance(this).shouldDeleteScreenshots()) {
-                screenShotHelper.deleteScreenShot(screenShotPath);
-            }
-        }
-    }
-
-    /**
-     * Adds the iv range of the pokemon to the clipboard if the clipboard setting is on.
-     */
-    public void addClipboardInfoIfSettingOn(ScanResult scanResult) {
-        GoIVSettings settings = GoIVSettings.getInstance(this);
-
-        if (settings.shouldCopyToClipboard()) {
-            String clipResult = clipboardTokenHandler.getClipboardText(scanResult, pokeInfoCalculator);
-
-            if (settings.shouldCopyToClipboardShowToast()) {
-                showToastOnPoke(String.format(getString(R.string.clipboard_copy_toast), clipResult));
-            }
-
-            ClipData clip = ClipData.newPlainText(clipResult, clipResult);
-            clipboard.setPrimaryClip(clip);
-        }
+        // Manual screenshot mode was removed in goiv-lite; nothing to delete.
     }
 
     /**
@@ -647,48 +566,12 @@ public class Pokefly extends Service {
     }
 
     /**
-     * Adds the iv range of the pokemon to the clipboard if the clipboard setting is on.
-     */
-    public void addSpecificIVClipboard(IVCombination ivCombination) {
-        if (scanResult != null) {
-            scanResult.selectedIVCombination = ivCombination;
-
-            String clipResult = clipboardTokenHandler.getClipboardText(scanResult, pokeInfoCalculator);
-
-            showToastOnPoke(String.format(getString(R.string.clipboard_copy_toast), clipResult));
-            clipboard.setPrimaryClip(ClipData.newPlainText(clipResult, clipResult));
-        }
-    }
-
-    /**
-     * Adds the users clipboard setting to the users clipboard.
-     */
-    public void addSpecificMovesetClipboard(MovesetData movesetData) {
-        if (scanResult != null) {
-            scanResult.selectedMoveset = movesetData;
-
-            GoIVSettings settings = GoIVSettings.getInstance(this);
-            if (settings.shouldCopyToClipboard()) {
-                String clipResult = clipboardTokenHandler.getClipboardText(scanResult, pokeInfoCalculator);
-                clipboard.setPrimaryClip(ClipData.newPlainText(clipResult, clipResult));
-
-                if (settings.shouldCopyToClipboardShowToast()) {
-                    showToastOnPoke( String.format(getString(R.string.clipboard_copy_toast), clipResult));
-                }
-            }
-        }
-    }
-
-    /**
      * resets the info dialogue to its default state.
      */
     public void closeInfoDialog() {
         hideInfoLayoutArcPointerAndCard();
         resetPokeflyStateMachine();
-        appraisalManager.reset();
-        if (!startedInManualScreenshotMode) {
-            ivButton.setShown(true, infoShownSent);
-        }
+        ivButton.setShown(true, infoShownSent);
     }
 
     /**
@@ -700,16 +583,7 @@ public class Pokefly extends Service {
     }
 
     private void initOcr() {
-        File externalFilesDir = getExternalFilesDir(null);
-        if (externalFilesDir == null) {
-            externalFilesDir = getFilesDir();
-        }
-        String extDir = externalFilesDir.toString();
-        if (!new File(extDir + "/tessdata/eng.traineddata").exists()) {
-            CopyUtils.copyAssetFolder(getAssets(), "tessdata", extDir + "/tessdata");
-        }
-
-        ocr = OcrHelper.init(this, extDir, pokeInfoCalculator);
+        ocr = OcrHelper.init(this, pokeInfoCalculator);
     }
 
 
@@ -721,28 +595,28 @@ public class Pokefly extends Service {
      * @param screenShotPath The screenshot path if it is a file, used to delete once checked
      */
     private void scanPokemon(@NonNull Bitmap pokemonImage, @NonNull Optional<String> screenShotPath) {
-        //WARNING: this method *must* always send an intent at the end, no matter what, to avoid the application
-        // hanging.
-
-        Intent info = Pokefly.createNoInfoIntent();
-        try {
-            ScanData data = ocr.scanPokemon(GoIVSettings.getInstance(this), pokemonImage, trainerLevel, true);
-            if (data.isFailed()) {
-                showToastOnPoke(getString(R.string.scan_pokemon_failed));
+        //WARNING: the scan *must* always send an intent at the end, no matter what, to avoid the application
+        // hanging. Runs off the main thread because ML Kit recognition blocks.
+        scanExecutor.execute(() -> {
+            Intent info = Pokefly.createNoInfoIntent();
+            try {
+                ScanData data = ocr.scanPokemon(GoIVSettings.getInstance(Pokefly.this), pokemonImage,
+                        trainerLevel, true);
+                if (data.isFailed()) {
+                    new Handler(android.os.Looper.getMainLooper())
+                            .post(() -> showToastOnPoke(getString(R.string.scan_pokemon_failed)));
+                }
+                Pokefly.populateInfoIntent(info, data, screenShotPath);
+            } finally {
+                LocalBroadcastManager.getInstance(Pokefly.this).sendBroadcast(info);
             }
-            Pokefly.populateInfoIntent(info, data, screenShotPath);
-        } finally {
-            LocalBroadcastManager.getInstance(Pokefly.this).sendBroadcast(info);
-        }
+        });
     }
 
     /**
      * Called by IV button, captures the screen and runs it through scanPokemon.
      */
     public void requestScan() {
-        // Cancel any pending screen check
-        screenWatcher.cancelPendingScreenScan();
-
         // Run this in a separate thread so the UI can be updated so that IV button hides before moveset scan starts
         scanScreenRunnable.updateRefs(this, screen);
         new Handler().postDelayed(scanScreenRunnable, 80); // Wait 2 frames (at 25ps) before scanning
@@ -806,35 +680,15 @@ public class Pokefly extends Service {
     };
 
     public void navigateToPreferredStartFraction() {
-        if (GoIVSettings.getInstance(this).shouldAutoOpenExpandedAppraise()) {
-            navigateToAppraisalFraction();
-        } else {
-            navigateToInputFraction();
-        }
+        navigateToInputFraction();
     }
 
     public void navigateToInputFraction() {
         fractionManager.show(new InputFraction(this));
     }
 
-    public void navigateToAppraisalFraction() {
-        fractionManager.show(new AppraisalFraction(this, sharedPref, appraisalManager));
-    }
-
     public void navigateToIVResultFraction() {
         fractionManager.show(new IVResultFraction(this));
-    }
-
-    public void navigateToIVCombinationsFraction() {
-        fractionManager.show(new IVCombinationsFraction(this));
-    }
-
-    public void navigateToPowerUpFraction() {
-        fractionManager.show(new PowerUpFraction(this));
-    }
-
-    public void navigateToMovesetFraction() {
-        fractionManager.show(new MovesetFraction(this, sharedPref));
     }
 
     /**
@@ -911,16 +765,14 @@ public class Pokefly extends Service {
 
                     if (!infoShownReceived) {
                         GoIVSettings settings = GoIVSettings.getInstance(Pokefly.this);
-                        if (!startedInManualScreenshotMode) {
-                            infoShownReceived = true;
-                        }
+                        infoShownReceived = true;
                         // Show the overlay window and the arc pointer
                         showInfoLayoutArcPointerAndCard();
                         // Ensure arc pointer is in the right place
                         setArcPointer(scanData.getEstimatedPokemonLevel().min);
                         // Read user preferences and navigate accordingly
                         if (settings.shouldShowConfirmationDialogs()) {
-                            // Will navigate either to InputFraction or AppraisalFraction
+                            // Show the input fraction for user correction
                             navigateToPreferredStartFraction();
                         } else {
                             // Skip the input screens and navigate directly to the results

@@ -3,16 +3,8 @@ package com.kamron.pogoiv;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
-import com.google.common.base.Strings;
-import com.kamron.pogoiv.clipboardlogic.ClipboardToken;
-import com.kamron.pogoiv.clipboardlogic.ClipboardTokenHandler;
-import com.kamron.pogoiv.clipboardlogic.tokens.IVPercentageToken;
-import com.kamron.pogoiv.clipboardlogic.tokens.IVPercentageTokenMode;
-import com.kamron.pogoiv.clipboardlogic.tokens.PokemonNameToken;
-import com.kamron.pogoiv.clipboardlogic.tokens.SeparatorToken;
-import com.kamron.pogoiv.clipboardlogic.tokens.UnicodeToken;
 import com.kamron.pogoiv.pokeflycomponents.ocrhelper.ScanFieldNames;
 import com.kamron.pogoiv.pokeflycomponents.ocrhelper.ScanFieldResults;
 import com.kamron.pogoiv.scanlogic.Data;
@@ -22,7 +14,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -166,55 +157,6 @@ public class GoIVSettings {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putInt(GoIVSettings.TEAM_NAME, value);
         editor.apply();
-    }
-
-    public String getClipboardPreference() {
-        String prefValue = prefs.getString(GOIV_CLIPBOARDSETTINGS, "");
-        if (!Strings.isNullOrEmpty(prefValue)) {
-            return prefValue;
-        }
-
-        //Below code gets the string representation of the "default" clipboard setting
-        ArrayList<ClipboardToken> defaultTokens = new ArrayList<>();
-        // Name (3 char) + MIN-MAX + Unicode not filled (MAX IV)
-        defaultTokens.add(new PokemonNameToken(false, 3));
-        defaultTokens.add(new IVPercentageToken(IVPercentageTokenMode.MIN));
-        defaultTokens.add(new SeparatorToken("-"));
-        defaultTokens.add(new IVPercentageToken(IVPercentageTokenMode.MAX));
-        defaultTokens.add(new UnicodeToken(false));
-
-        return ClipboardTokenHandler.tokenListToRepresentation(defaultTokens);
-    }
-
-    public String getClipboardSinglePreference() {
-        String prefValue = prefs.getString(GOIV_CLIPBOARDSINGLESETTINGS, "");
-        if (!Strings.isNullOrEmpty(prefValue)) {
-            return prefValue;
-        }
-
-        //Below code gets the string representation of the "default" single clipboard setting
-        ArrayList<ClipboardToken> defaultTokens = new ArrayList<>();
-        // Name (5 char) + AVG + Unicode not filled (MAX IV)
-        defaultTokens.add(new PokemonNameToken(false, 5));
-        defaultTokens.add(new IVPercentageToken(IVPercentageTokenMode.AVG));
-        defaultTokens.add(new UnicodeToken(false));
-
-        return ClipboardTokenHandler.tokenListToRepresentation(defaultTokens);
-    }
-
-    public String getClipboardPerfectIvPreference() {
-        String prefValue = prefs.getString(GOIV_CLIPBOARDPERFECTIVSETTINGS, "");
-        if (!Strings.isNullOrEmpty(prefValue)) {
-            return prefValue;
-        }
-
-        //Below code gets the string representation of the "default" perfect IV clipboard setting
-        ArrayList<ClipboardToken> defaultTokens = new ArrayList<>();
-        // Name (7 char) + average IV (should be 100%)
-        defaultTokens.add(new PokemonNameToken(false, 5));
-        defaultTokens.add(new IVPercentageToken(IVPercentageTokenMode.AVG));
-
-        return ClipboardTokenHandler.tokenListToRepresentation(defaultTokens);
     }
 
     public void setClipboardPreference(String tokenListRepresentation) {
