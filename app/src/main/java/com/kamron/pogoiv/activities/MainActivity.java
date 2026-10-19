@@ -54,12 +54,21 @@ public class MainActivity extends AppCompatActivity {
     private final ActivityResultLauncher<Intent> screenCaptureLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                    MediaProjectionManager projectionManager =
-                            (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-                    MediaProjection projection = projectionManager.getMediaProjection(
-                            result.getResultCode(), result.getData());
-                    screen = ScreenGrabber.init(projection, rawDisplayMetrics);
-                    startService(Pokefly.createBeginIntent(this));
+                    try {
+                        // Re-measure to be safe (defensive against null/stale metrics)
+                        measureDisplay();
+                        MediaProjectionManager projectionManager =
+                                (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+                        MediaProjection projection = projectionManager.getMediaProjection(
+                                result.getResultCode(), result.getData());
+                        screen = ScreenGrabber.init(projection, rawDisplayMetrics);
+                        startService(Pokefly.createBeginIntent(this));
+                    } catch (Exception e) {
+                        android.widget.Toast.makeText(this,
+                                "Startup failed: " + e.getClass().getSimpleName() + ": " + e.getMessage(),
+                                android.widget.Toast.LENGTH_LONG).show();
+                        updateUi();
+                    }
                 } else {
                     updateUi();
                 }
