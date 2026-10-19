@@ -8,7 +8,7 @@ import com.kamron.pogoiv.pokeflycomponents.ocrhelper.ScanPoint;
 public class Data {
 
     public static final int MINIMUM_TRAINER_LEVEL = 1;
-    public static final int MAXIMUM_TRAINER_LEVEL = 50;
+    public static final int MAXIMUM_TRAINER_LEVEL = 80; // Pokemon GO raised the trainer cap to 80 in 2025
     public static final int MINIMUM_POKEMON_LEVEL = 1;
     public static final int MAXIMUM_POKEMON_LEVEL = 50;
     public static final int MAXIMUM_WILD_POKEMON_LEVEL = 35;
