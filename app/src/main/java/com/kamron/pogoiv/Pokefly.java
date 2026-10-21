@@ -206,7 +206,10 @@ public class Pokefly extends Service {
     public static void populateInfoIntent(Intent intent, ScanData scanData, @NonNull Optional<String> filePath) {
         intent.putExtra(KEY_SEND_INFO_NAME, scanData.getPokemonName());
         intent.putExtra(KEY_SEND_INFO_TYPE, scanData.getPokemonType());
-        intent.putExtra(KEY_SEND_INFO_CANDY, scanData.getCandyNames().toArray());
+        // Must be a String[]: the receiver reads this with getStringArrayExtra,
+        // and a plain toArray() (Object[]) makes that return null and crash it.
+        intent.putExtra(KEY_SEND_INFO_CANDY,
+                scanData.getCandyNames().toArray(new String[0]));
         intent.putExtra(KEY_SEND_INFO_GENDER, scanData.getPokemonGender());
         intent.putExtra(KEY_SEND_INFO_HP, scanData.getPokemonHP());
         intent.putExtra(KEY_SEND_INFO_CP, scanData.getPokemonCP());
@@ -758,7 +761,8 @@ public class Pokefly extends Service {
 
                     String pokemonName = intent.getStringExtra(KEY_SEND_INFO_NAME);
                     String pokemonType = intent.getStringExtra(KEY_SEND_INFO_TYPE);
-                    List<String> candyNames = Arrays.asList(intent.getStringArrayExtra(KEY_SEND_INFO_CANDY));
+                    String[] candyNamesArr = intent.getStringArrayExtra(KEY_SEND_INFO_CANDY);
+                    List<String> candyNames = Arrays.asList(candyNamesArr == null ? new String[0] : candyNamesArr);
 
 
                     @SuppressWarnings("unchecked") Optional<String> lScreenShotFile =
