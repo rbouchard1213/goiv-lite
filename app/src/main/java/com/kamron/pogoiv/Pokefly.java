@@ -310,9 +310,11 @@ public class Pokefly extends Service {
                 }
                 break;
         }
-        //We have intent data, it's possible this service will be killed and we would want to recreate it
-        //https://github.com/farkam135/GoIV/issues/477
-        return START_REDELIVER_INTENT;
+        // START_NOT_STICKY: a system restart with a redelivered ACTION_START would
+        // call startForeground() without fresh screen-capture consent, which
+        // Android 14+ rejects with a SecurityException crash. The user restarts
+        // from MainActivity, which re-runs the consent flow.
+        return START_NOT_STICKY;
     }
 
     private void setupDisplaySizeInfo() {

@@ -1,9 +1,11 @@
 package com.kamron.pogoiv.activities;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
@@ -18,6 +20,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.kamron.pogoiv.GoIVSettings;
@@ -51,6 +54,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
+    private final ActivityResultLauncher<String> notificationPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                // Nothing depends on the result: if denied, the system just
+                // hides the running notification and its buttons.
+            });
+
     private final ActivityResultLauncher<Intent> screenCaptureLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == RESULT_OK && result.getData() != null) {
@@ -61,6 +70,15 @@ public class MainActivity extends AppCompatActivity {
                                 (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
                         MediaProjection projection = projectionManager.getMediaProjection(
                                 result.getResultCode(), result.getData());
+                        // Consent is granted, so the mediaProjection foreground
+                        // service may start now (Android 14+ rejects it earlier).
+                        Intent startIntent = Pokefly.createStartIntent(this,
+                                GoIVSettings.getInstance(this).getLevel());
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            startForegroundService(startIntent);
+                        } else {
+                            startService(startIntent);
+                        }
                         screen = ScreenGrabber.init(projection, rawDisplayMetrics);
                         startService(Pokefly.createBeginIntent(this));
                     } catch (Exception e) {
@@ -150,15 +168,17 @@ public class MainActivity extends AppCompatActivity {
         binding.startStopButton.setText(R.string.main_starting);
         binding.startStopButton.setEnabled(false);
 
-        // Start the Pokefly service, then request screen capture; Pokefly begins
-        // once the MediaProjection is handed over via createBeginIntent.
-        Intent intent = Pokefly.createStartIntent(this, GoIVSettings.getInstance(this).getLevel());
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent);
-        } else {
-            startService(intent);
+        // Android 13+: without POST_NOTIFICATIONS the running notification
+        // (with its pause/stop buttons) stays hidden. Ask, but never block on it.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                        != PackageManager.PERMISSION_GRANTED) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
         }
 
+        // Android 14+: a mediaProjection foreground service may only be started
+        // AFTER the user grants screen-capture consent, so request consent first.
+        // The service starts from the consent result handler once granted.
         MediaProjectionManager projectionManager =
                 (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         screenCaptureLauncher.launch(projectionManager.createScreenCaptureIntent());
