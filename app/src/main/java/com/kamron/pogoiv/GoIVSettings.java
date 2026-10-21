@@ -24,6 +24,7 @@ public class GoIVSettings {
 
     public static final String PREFS_GO_IV_SETTINGS = "GoIV_settings";
     public static final String PREF_LEVEL = "level";
+    public static final String PREF_LEVEL_SET = "level_set";
     public static final String LAUNCH_POKEMON_GO = "launchPokemonGo";
     public static final String SHOW_CONFIRMATION_DIALOG = "showConfirmationDialog";
     public static final String MANUAL_SCREENSHOT_MODE = "manualScreenshotMode";
@@ -81,7 +82,12 @@ public class GoIVSettings {
     }
 
     public void setLevel(int level) {
-        prefs.edit().putInt(PREF_LEVEL, level).apply();
+        prefs.edit().putInt(PREF_LEVEL, level).putBoolean(PREF_LEVEL_SET, true).apply();
+    }
+
+    /** Whether the user has ever picked their trainer level (vs. the default 1). */
+    public boolean isLevelSet() {
+        return prefs.getBoolean(PREF_LEVEL_SET, false);
     }
 
     public boolean hasManualScanCalibration() {

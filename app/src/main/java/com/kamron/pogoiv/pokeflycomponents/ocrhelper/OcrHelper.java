@@ -214,9 +214,13 @@ public class OcrHelper {
         }
 
         // Name: lettered line below the CP. Gender symbols may trail the name.
+        // Band measured from a real 1080x2400 capture: the name renders at ~38% of
+        // screen height on tall phones (the old 10-30% band sat above it and the
+        // species guesser starved). The HP line (~45%) also matches LETTERS via
+        // "HP", but the name sits far closer to this band's center and wins.
         String name = "";
         Pokemon.Gender gender = Pokemon.Gender.N;
-        LineInfo nameLine = findLineInBand(lines, 0.10f, 0.30f, LETTERS);
+        LineInfo nameLine = findLineInBand(lines, 0.30f, 0.46f, LETTERS);
         if (nameLine != null) {
             String rawName = nameLine.text;
             if (rawName.contains("\u2640")) {
@@ -242,7 +246,7 @@ public class OcrHelper {
 
         // Type: e.g. "WATER / FLYING", below the HP bar.
         String type = "";
-        LineInfo typeLine = findLineInBand(lines, 0.30f, 0.55f,
+        LineInfo typeLine = findLineInBand(lines, 0.44f, 0.58f,
                 java.util.regex.Pattern.compile("[A-Za-z]{3,}(\\s*/\\s*[A-Za-z]{3,})?"));
         if (typeLine != null && (name.isEmpty() || !typeLine.text.equalsIgnoreCase(name))) {
             type = typeLine.text;

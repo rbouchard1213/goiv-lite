@@ -5,6 +5,9 @@
     <string name="goiv_is_open_source">GoIV is open source!</string>
     <string name="trainer_info">Trainer Info</string>
     <string name="trainer_level">Level</string>
+    <string name="trainer_level_button">Trainer level: %1$d (tap to change)</string>
+    <string name="trainer_level_unset">Trainer level: not set (tap to set)</string>
+    <string name="trainer_level_explain">Your trainer level anchors the level arc and narrows the IV ranges. Set it once; change it when you level up.</string>
     <string name="trainer_team">Team</string>
     <string name="notice">Notice</string>
 

@@ -19,6 +19,8 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
+import android.widget.NumberPicker;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -26,6 +28,7 @@ import com.kamron.pogoiv.GoIVSettings;
 import com.kamron.pogoiv.Pokefly;
 import com.kamron.pogoiv.R;
 import com.kamron.pogoiv.databinding.ActivityMainBinding;
+import com.kamron.pogoiv.scanlogic.Data;
 
 import timber.log.Timber;
 
@@ -104,6 +107,8 @@ public class MainActivity extends AppCompatActivity {
         Timber.tag(TAG);
 
         binding.startStopButton.setOnClickListener(v -> runStartButtonLogic());
+        binding.trainerLevelButton.setOnClickListener(v -> showTrainerLevelPicker(false));
+        updateTrainerLevelButton();
 
         // Android 13+: without POST_NOTIFICATIONS the running notification stays
         // hidden. Ask here, on open — asking inside startGoIV() made this popup
@@ -162,11 +167,50 @@ public class MainActivity extends AppCompatActivity {
                     Uri.parse("package:" + getPackageName()));
             overlayPermissionLauncher.launch(intent);
         } else if (!Pokefly.isRunning()) {
-            startGoIV();
+            // The trainer level anchors every scan's level estimate and was never
+            // asked for in the lite build (scans silently assumed level 1). Ask on
+            // the first start, like the classic app did.
+            if (!GoIVSettings.getInstance(this).isLevelSet()) {
+                showTrainerLevelPicker(true);
+            } else {
+                startGoIV();
+            }
         } else {
             stopGoIV();
         }
         updateUi();
+    }
+
+    private void updateTrainerLevelButton() {
+        GoIVSettings settings = GoIVSettings.getInstance(this);
+        if (settings.isLevelSet()) {
+            binding.trainerLevelButton.setText(
+                    getString(R.string.trainer_level_button, settings.getLevel()));
+        } else {
+            binding.trainerLevelButton.setText(R.string.trainer_level_unset);
+        }
+    }
+
+    private void showTrainerLevelPicker(boolean startAfter) {
+        GoIVSettings settings = GoIVSettings.getInstance(this);
+        NumberPicker picker = new NumberPicker(this);
+        picker.setMinValue(Data.MINIMUM_TRAINER_LEVEL);
+        picker.setMaxValue(Data.MAXIMUM_TRAINER_LEVEL);
+        picker.setValue(settings.getLevel());
+        picker.setWrapSelectorWheel(false);
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.trainer_info)
+                .setMessage(R.string.trainer_level_explain)
+                .setView(picker)
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    settings.setLevel(picker.getValue());
+                    updateTrainerLevelButton();
+                    if (startAfter) {
+                        startGoIV();
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
     }
 
     private void startGoIV() {
