@@ -11,6 +11,8 @@ import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.drawable.Drawable;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -69,6 +71,11 @@ public class Pokefly extends Service {
     public static final String ACTION_STOP = "com.kamron.pogoiv.ACTION_STOP";
 
     private static final String KEY_TRAINER_LEVEL = "key_trainer_level";
+    private static final String KEY_RESULT_CODE = "key_result_code";
+    private static final String KEY_RESULT_DATA = "key_result_data";
+    private static final String KEY_DISPLAY_WIDTH = "key_display_width";
+    private static final String KEY_DISPLAY_HEIGHT = "key_display_height";
+    private static final String KEY_DISPLAY_DENSITY = "key_display_density";
 
     private static final String KEY_SEND_INFO_NAME = "key_send_info_name";
     private static final String KEY_SEND_INFO_TYPE = "key_send_info_type";
@@ -172,10 +179,17 @@ public class Pokefly extends Service {
         return intent;
     }
 
-    public static Intent createStartIntent(@NonNull Context context, int trainerLevel) {
+    public static Intent createStartIntent(@NonNull Context context, int trainerLevel,
+                                           int resultCode, Intent resultData,
+                                           int displayWidth, int displayHeight, int displayDensityDpi) {
         Intent intent = new Intent(context, Pokefly.class);
         intent.setAction(ACTION_START);
         intent.putExtra(KEY_TRAINER_LEVEL, trainerLevel);
+        intent.putExtra(KEY_RESULT_CODE, resultCode);
+        intent.putExtra(KEY_RESULT_DATA, resultData);
+        intent.putExtra(KEY_DISPLAY_WIDTH, displayWidth);
+        intent.putExtra(KEY_DISPLAY_HEIGHT, displayHeight);
+        intent.putExtra(KEY_DISPLAY_DENSITY, displayDensityDpi);
         return intent;
     }
 
@@ -293,9 +307,36 @@ public class Pokefly extends Service {
                 goIVNotificationManager.showRunningNotification();
 
                 startedInManualScreenshotMode = false;
-                // Ask MainActivity to create a ScreenGrabber for us, and wait for it to finish
-                LocalBroadcastManager.getInstance(this)
-                        .sendBroadcast(new Intent(ACTION_REQUEST_SCREEN_GRABBER));
+                // Android 14+: a MediaProjection may only be created while a
+                // mediaProjection foreground service is running, so cash in the
+                // user's consent HERE, now that startForeground() has run.
+                // Creating it in MainActivity throws a SecurityException.
+                try {
+                    int resultCode = intent.getIntExtra(KEY_RESULT_CODE, Activity.RESULT_CANCELED);
+                    Intent resultData = intent.getParcelableExtra(KEY_RESULT_DATA);
+                    if (resultCode != Activity.RESULT_OK || resultData == null) {
+                        throw new IllegalStateException("No screen-capture consent to start with");
+                    }
+                    MediaProjectionManager projectionManager = (MediaProjectionManager)
+                            getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+                    MediaProjection projection =
+                            projectionManager.getMediaProjection(resultCode, resultData);
+                    DisplayMetrics captureMetrics = new DisplayMetrics();
+                    captureMetrics.widthPixels =
+                            intent.getIntExtra(KEY_DISPLAY_WIDTH, displayMetrics.widthPixels);
+                    captureMetrics.heightPixels =
+                            intent.getIntExtra(KEY_DISPLAY_HEIGHT, displayMetrics.heightPixels);
+                    captureMetrics.densityDpi =
+                            intent.getIntExtra(KEY_DISPLAY_DENSITY, displayMetrics.densityDpi);
+                    screen = ScreenGrabber.init(projection, captureMetrics);
+                } catch (Exception e) {
+                    // Without a capture the service is useless; stop and remove the
+                    // notification, as the old ACTION_BEGIN failure path did.
+                    if (android.os.Build.VERSION.SDK_INT >= 24) {
+                        stopForeground(STOP_FOREGROUND_REMOVE);
+                    }
+                    stopSelf();
+                }
                 break;
             case ACTION_BEGIN:
                 try {

@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Build;
@@ -26,7 +25,6 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.kamron.pogoiv.GoIVSettings;
 import com.kamron.pogoiv.Pokefly;
 import com.kamron.pogoiv.R;
-import com.kamron.pogoiv.ScreenGrabber;
 import com.kamron.pogoiv.databinding.ActivityMainBinding;
 
 import timber.log.Timber;
@@ -43,7 +41,6 @@ public class MainActivity extends AppCompatActivity {
     public static final String ACTION_RESTART_POKEFLY = "com.kamron.pogoiv.ACTION_RESTART_POKEFLY";
 
     private ActivityMainBinding binding;
-    private ScreenGrabber screen;
     private DisplayMetrics rawDisplayMetrics;
 
     private final ActivityResultLauncher<Intent> overlayPermissionLauncher =
@@ -66,21 +63,20 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         // Re-measure to be safe (defensive against null/stale metrics)
                         measureDisplay();
-                        MediaProjectionManager projectionManager =
-                                (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-                        MediaProjection projection = projectionManager.getMediaProjection(
-                                result.getResultCode(), result.getData());
-                        // Consent is granted, so the mediaProjection foreground
-                        // service may start now (Android 14+ rejects it earlier).
+                        // Hand the consent straight to Pokefly: on Android 14+ the
+                        // MediaProjection itself may only be created once the
+                        // mediaProjection foreground service is running, so the
+                        // service creates it (and the ScreenGrabber) itself.
                         Intent startIntent = Pokefly.createStartIntent(this,
-                                GoIVSettings.getInstance(this).getLevel());
+                                GoIVSettings.getInstance(this).getLevel(),
+                                result.getResultCode(), result.getData(),
+                                rawDisplayMetrics.widthPixels, rawDisplayMetrics.heightPixels,
+                                rawDisplayMetrics.densityDpi);
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                             startForegroundService(startIntent);
                         } else {
                             startService(startIntent);
                         }
-                        screen = ScreenGrabber.init(projection, rawDisplayMetrics);
-                        startService(Pokefly.createBeginIntent(this));
                     } catch (Exception e) {
                         android.widget.Toast.makeText(this,
                                 "Startup failed: " + e.getClass().getSimpleName() + ": " + e.getMessage(),
@@ -186,10 +182,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void stopGoIV() {
         startService(Pokefly.createStopIntent(this));
-        if (screen != null) {
-            screen.exit();
-            screen = null;
-        }
+        // Pokefly owns the ScreenGrabber now and exits it in onDestroy.
         updateUi();
     }
 
