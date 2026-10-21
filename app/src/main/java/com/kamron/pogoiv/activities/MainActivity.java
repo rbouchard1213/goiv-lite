@@ -105,6 +105,15 @@ public class MainActivity extends AppCompatActivity {
 
         binding.startStopButton.setOnClickListener(v -> runStartButtonLogic());
 
+        // Android 13+: without POST_NOTIFICATIONS the running notification stays
+        // hidden. Ask here, on open — asking inside startGoIV() made this popup
+        // collide with the screen-capture consent popup and cancel it.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                        != PackageManager.PERMISSION_GRANTED) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+        }
+
         measureDisplay();
         runActionOnIntent(getIntent());
     }
@@ -163,14 +172,6 @@ public class MainActivity extends AppCompatActivity {
     private void startGoIV() {
         binding.startStopButton.setText(R.string.main_starting);
         binding.startStopButton.setEnabled(false);
-
-        // Android 13+: without POST_NOTIFICATIONS the running notification
-        // (with its pause/stop buttons) stays hidden. Ask, but never block on it.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                        != PackageManager.PERMISSION_GRANTED) {
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
-        }
 
         // Android 14+: a mediaProjection foreground service may only be started
         // AFTER the user grants screen-capture consent, so request consent first.

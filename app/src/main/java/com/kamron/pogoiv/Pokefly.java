@@ -329,6 +329,9 @@ public class Pokefly extends Service {
                     captureMetrics.densityDpi =
                             intent.getIntExtra(KEY_DISPLAY_DENSITY, displayMetrics.densityDpi);
                     screen = ScreenGrabber.init(projection, captureMetrics);
+                    // Nothing else in the lite flow ever makes the first call:
+                    // show the floating IV button now that capture is live.
+                    ivButton.setShown(true, infoShownSent);
                 } catch (Exception e) {
                     // Without a capture the service is useless; stop and remove the
                     // notification, as the old ACTION_BEGIN failure path did.
