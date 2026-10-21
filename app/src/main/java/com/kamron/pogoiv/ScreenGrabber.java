@@ -11,6 +11,8 @@ import android.hardware.display.VirtualDisplay;
 import android.media.Image;
 import android.media.ImageReader;
 import android.media.projection.MediaProjection;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Build;
 import androidx.annotation.ColorInt;
 import androidx.annotation.Nullable;
@@ -30,6 +32,7 @@ public class ScreenGrabber {
     private static ScreenGrabber instance = null;
     private ImageReader imageReader;
     private MediaProjection projection = null;
+    private MediaProjection.Callback projectionCallback;
     private DisplayMetrics rawDisplayMetrics;
     private VirtualDisplay virtualDisplay;
 
@@ -37,6 +40,14 @@ public class ScreenGrabber {
     private ScreenGrabber(MediaProjection mediaProjection, DisplayMetrics raw) {
         rawDisplayMetrics = raw;
         projection = mediaProjection;
+        // Android 14+ refuses createVirtualDisplay() until a callback is registered.
+        projectionCallback = new MediaProjection.Callback() {
+            @Override
+            public void onStop() {
+                // Capture was revoked by the system or user; Pokefly handles shutdown.
+            }
+        };
+        projection.registerCallback(projectionCallback, new Handler(Looper.getMainLooper()));
         imageReader = ImageReader.newInstance(rawDisplayMetrics.widthPixels, rawDisplayMetrics.heightPixels,
                 PixelFormat.RGBA_8888, 2);
         new Thread(new Runnable() {
@@ -74,6 +85,10 @@ public class ScreenGrabber {
             virtualDisplay = null;
             imageReader.close();
             imageReader = null;
+            if (projectionCallback != null) {
+                projection.unregisterCallback(projectionCallback);
+                projectionCallback = null;
+            }
             projection.stop();
             projection = null;
             rawDisplayMetrics = null;
