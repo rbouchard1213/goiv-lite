@@ -24,6 +24,16 @@ configurations.all {
     exclude group: 'com.google.guava', module: 'listenablefuture'
 }
 
+// Pin ONE debug signing key for every build. Without this, each CI run signs
+// with a throwaway key and Android refuses to install the new build over the
+// old one ("app not installed"). The keystore rides along base64-encoded
+// (debug.keystore.b64 at the repo root; standard android/androiddebugkey
+// debug credentials, not a release secret) and is decoded at configuration time.
+def pinnedKeystore = rootProject.file('debug.keystore')
+if (!pinnedKeystore.exists()) {
+    pinnedKeystore.bytes = rootProject.file('debug.keystore.b64').text.decodeBase64()
+}
+
 android {
     namespace "com.kamron.pogoiv"
     compileSdk 34
@@ -35,6 +45,15 @@ android {
         versionCode 1
         versionName "1.0.0-lite"
         vectorDrawables.useSupportLibrary = true
+    }
+
+    signingConfigs {
+        debug {
+            storeFile pinnedKeystore
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
     }
 
     buildTypes {
