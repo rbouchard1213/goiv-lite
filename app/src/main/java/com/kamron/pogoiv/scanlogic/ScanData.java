@@ -94,8 +94,9 @@ public class ScanData {
                 pokemonHP.or(-1),
                 isLucky,
 
-                candyNames.get(0),
-                candyNames.get(1),
+                // Guarded: a scan may find fewer than two candy names.
+                candyNames.size() > 0 ? candyNames.get(0) : "",
+                candyNames.size() > 1 ? candyNames.get(1) : "",
                 pokemonCandyAmount.or(-1),
                 evolutionCandyCost.or(-1),
                 powerUpCandyCost.or(-1),
