@@ -185,20 +185,9 @@ public class PokeInfoCalculator {
         int pokeListSize = names.length;
         ArrayList<Pokemon> formVariantPokemons = new ArrayList<>();
 
-        // quick hardcoded patch for supporting discontinuous pokedex number pokemons followings
-        //   #808 Meltan
-        //   #809 Melmetal
-        //   #862 Obstagoon
-        //   #863 Perrserker
-        //   #865 Sirfetch'd
-        //   #866 Mr. Rime
-        //   #867 Runerigus
-        // currently GoIV logic expects that pokedex numbers are continuous and less than pokeListSize.
-        // so this patch shifts these to dummy indexes, with pokeListSize offset.
-        candyNamesArray[pokeListSize - MELTAN_INDEX_OFFSET] = pokeListSize - MELTAN_INDEX_OFFSET;
-        candyNamesArray[pokeListSize - MELMETAL_INDEX_OFFSET] = pokeListSize - MELTAN_INDEX_OFFSET;
-        devolution[pokeListSize - MELMETAL_INDEX_OFFSET] = pokeListSize - MELTAN_INDEX_OFFSET;
-        // END patch for supporting discontinuous pokedex number pokemons
+        // The data tables are complete and in true dex order (1..1025) since the
+        // 2026 data refresh, so the old dummy-index patch for discontinuous dex
+        // numbers (Meltan et al.) is gone: those species live at their real indexes.
 
         for (int i = 0; i < pokeListSize; i++) {
             PokemonBase p = new PokemonBase(names[i], displayNames[i], i, devolution[i],
