@@ -311,7 +311,14 @@ public class OcrHelper {
         }
 
         // Level: arc pixel scan, refined with the power-up candy cost mapping.
-        double estimatedPokemonLevel = getPokemonLevelFromImg(pokemonImage, trainerLevel);
+        double estimatedPokemonLevel;
+        try {
+            estimatedPokemonLevel = getPokemonLevelFromImg(pokemonImage, trainerLevel);
+        } catch (RuntimeException e) {
+            // Never let a level-scan hiccup fail the whole scan: fall back to the
+            // max-level estimate; the candy-cost refinement below still narrows it.
+            estimatedPokemonLevel = Data.trainerLevelToMaxPokeLevel(trainerLevel);
+        }
         LevelRange estimatedLevelRange =
                 refineLevelEstimate(trainerLevel, powerUpCandyCost, estimatedPokemonLevel);
 
@@ -361,6 +368,14 @@ public class OcrHelper {
      */
     private static int getCardinalWhiteLineDistFromImg(Bitmap pokemonImage, int x, int y) {
         final int targetColor = Color.WHITE;
+
+        // The arc endpoint tables can land outside the bitmap on tall screens:
+        // the arc radius is height-based, so its far ends overhang the width.
+        // An out-of-bounds start point is simply "not a white pixel" — the
+        // in-loop guard below only runs after the first read, so check here.
+        if (x < 0 || x >= pokemonImage.getWidth() || y < 0 || y >= pokemonImage.getHeight()) {
+            return -1;
+        }
 
         Double angle = null;
         int r = -1;

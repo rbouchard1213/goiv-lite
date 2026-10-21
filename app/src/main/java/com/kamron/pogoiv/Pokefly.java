@@ -653,6 +653,12 @@ public class Pokefly extends Service {
                             .post(() -> showToastOnPoke(getString(R.string.scan_pokemon_failed)));
                 }
                 Pokefly.populateInfoIntent(info, data, screenShotPath);
+            } catch (RuntimeException e) {
+                // A reader crash must never kill the service (an uncaught exception
+                // on this pool thread used to take the whole app down). Report a
+                // failed scan instead; the finally block still sends the intent.
+                new Handler(android.os.Looper.getMainLooper())
+                        .post(() -> showToastOnPoke(getString(R.string.scan_pokemon_failed)));
             } finally {
                 LocalBroadcastManager.getInstance(Pokefly.this).sendBroadcast(info);
             }
