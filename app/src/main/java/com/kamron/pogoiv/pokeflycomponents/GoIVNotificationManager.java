@@ -52,14 +52,14 @@ public class GoIVNotificationManager {
         // Open app action
         Intent openAppIntent = new Intent(pokefly, MainActivity.class);
         PendingIntent openAppPendingIntent = PendingIntent.getActivity(
-                pokefly, 0, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                pokefly, 0, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         contentView.setOnClickPendingIntent(R.id.root, openAppPendingIntent);
         contentBigView.setOnClickPendingIntent(R.id.root, openAppPendingIntent);
 
         // Open app action (settings screen was cut in goiv-lite)
         Intent startSettingAppIntent = new Intent(pokefly, MainActivity.class);
         PendingIntent startSettingsPendingIntent = PendingIntent.getActivity(
-                pokefly, 0, startSettingAppIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                pokefly, 0, startSettingAppIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         contentView.setOnClickPendingIntent(R.id.settings, startSettingsPendingIntent);
         contentBigView.setOnClickPendingIntent(R.id.settings, startSettingsPendingIntent);
 
@@ -67,7 +67,7 @@ public class GoIVNotificationManager {
         Intent startServiceIntent = new Intent(pokefly, MainActivity.class)
                 .setAction(MainActivity.ACTION_START_POKEFLY);
         PendingIntent startServicePendingIntent = PendingIntent.getActivity(
-                pokefly, 0, startServiceIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                pokefly, 0, startServiceIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         contentView.setOnClickPendingIntent(R.id.start, startServicePendingIntent);
         contentBigView.setOnClickPendingIntent(R.id.start, startServicePendingIntent);
 
@@ -109,7 +109,7 @@ public class GoIVNotificationManager {
         // Open app action
         Intent openAppIntent = new Intent(pokefly, MainActivity.class);
         PendingIntent openAppPendingIntent = PendingIntent.getActivity(
-                pokefly, 0, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                pokefly, 0, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         contentView.setOnClickPendingIntent(R.id.root, openAppPendingIntent);
         contentBigView.setOnClickPendingIntent(R.id.root, openAppPendingIntent);
 
@@ -120,7 +120,7 @@ public class GoIVNotificationManager {
         // Stop service action
         Intent stopServiceIntent = Pokefly.createStopIntent(pokefly);
         PendingIntent stopServicePendingIntent = PendingIntent.getService(
-                pokefly, 0, stopServiceIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                pokefly, 0, stopServiceIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         contentView.setOnClickPendingIntent(R.id.pause, stopServicePendingIntent);
         contentBigView.setOnClickPendingIntent(R.id.pause, stopServicePendingIntent);
 
