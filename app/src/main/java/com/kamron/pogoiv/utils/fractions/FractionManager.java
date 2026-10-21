@@ -76,8 +76,16 @@ public class FractionManager {
     }
 
     private View addFractionView(@NonNull Fraction fraction) {
-        return LayoutInflater.from(themedContext)
-                .inflate(fraction.getLayoutResId(), containerView);
+        // Inflate WITHOUT attaching, then attach manually and return the inflated
+        // view itself. The two-arg inflate() returns the CONTAINER (a FrameLayout),
+        // and the fractions hand that root to generated ViewBinding classes, which
+        // cast it to the layout's root type — passing the container crashed every
+        // fraction screen with a ClassCastException once the ButterKnife loose
+        // binding was replaced by ViewBinding.
+        View fractionView = LayoutInflater.from(themedContext)
+                .inflate(fraction.getLayoutResId(), containerView, false);
+        containerView.addView(fractionView);
+        return fractionView;
     }
 
     void updateFloatingViewVerticalOffset(int offsetPx) {
